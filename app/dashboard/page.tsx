@@ -6,6 +6,7 @@ import { StockByType } from "./components/StockByType";
 import { LowStockAlert } from "./components/LowStockAlert";
 import { OrdersList } from "./components/OrdersList";
 import { calculateDashboardData } from "./utils";
+import LogoutButton from "@/components/buttons/LogoutButton";
 
 export default function DashboardPage() {
   const dashboardData = calculateDashboardData();
@@ -16,11 +17,8 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-          <Link href="/">
-            <Button variant="outline" size="sm">
-              Logout
-            </Button>
-          </Link>
+
+          <LogoutButton />
         </div>
 
         {/* Stats Grid */}

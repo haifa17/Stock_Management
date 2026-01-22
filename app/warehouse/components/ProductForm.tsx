@@ -42,7 +42,7 @@ export function ProductForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Label htmlFor="name">Product Name</Label>
         <Input
           id="name"
@@ -53,7 +53,7 @@ export function ProductForm() {
         />
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Label htmlFor="type">Type</Label>
         <CustomSelect
           id="type"
@@ -64,7 +64,7 @@ export function ProductForm() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Label htmlFor="quantity">Quantity (pcs)</Label>
           <Input
             id="quantity"
@@ -75,7 +75,7 @@ export function ProductForm() {
             required
           />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Label htmlFor="weight">Weight (kg)</Label>
           <Input
             id="weight"
@@ -89,13 +89,13 @@ export function ProductForm() {
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Label>Lot ID</Label>
         <Input value={formData.lotId} disabled className="bg-muted" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Label htmlFor="arrival">Arrival Date</Label>
           <Input
             id="arrival"
@@ -105,7 +105,7 @@ export function ProductForm() {
             required
           />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Label htmlFor="expiry">Expiry Date</Label>
           <Input
             id="expiry"
@@ -117,7 +117,7 @@ export function ProductForm() {
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Label htmlFor="status">Status</Label>
         <CustomSelect
           id="status"
@@ -127,7 +127,7 @@ export function ProductForm() {
         />
       </div>
 
-      <Button type="submit" className="w-full">
+      <Button type="submit" className="w-full cursor-pointer mt-5">
         Add to Inventory
       </Button>
     </form>
