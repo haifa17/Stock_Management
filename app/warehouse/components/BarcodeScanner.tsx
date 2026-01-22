@@ -9,8 +9,8 @@ export function BarcodeScanner() {
   const [error, setError] = useState("")
   const [isMounted, setIsMounted] = useState(false)
   const scannerRef = useRef<any>(null)
+  const isRunningRef = useRef(false)
 
-  // Ensure component is mounted before rendering
   useEffect(() => {
     setIsMounted(true)
   }, [])
@@ -18,11 +18,14 @@ export function BarcodeScanner() {
   useEffect(() => {
     if (!isScanning || !isMounted) return
 
+    let isCancelled = false
+
     const startScanner = async () => {
       try {
-        // Dynamic import to avoid SSR issues
         const { Html5Qrcode } = await import("html5-qrcode")
         
+        if (isCancelled) return
+
         const scanner = new Html5Qrcode("qr-reader")
         scannerRef.current = scanner
 
@@ -34,31 +37,45 @@ export function BarcodeScanner() {
           },
           (decodedText) => {
             setScannedCode(decodedText)
-            scanner.stop().catch(console.error)
+            isRunningRef.current = false
+            scanner.stop().catch(() => {})
             setIsScanning(false)
           },
-          (errorMessage) => {
-            // Normal errors during scanning - can be ignored
+          () => {
+            // Normal scanning errors - ignore
           }
         )
+        
+        isRunningRef.current = true
       } catch (err) {
         console.error(err)
         setError("Impossible d'accéder à la caméra")
         setIsScanning(false)
+        isRunningRef.current = false
       }
     }
 
     const timeout = setTimeout(startScanner, 100)
 
     return () => {
+      isCancelled = true
       clearTimeout(timeout)
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(console.error)
+      
+      if (scannerRef.current && isRunningRef.current) {
+        scannerRef.current.stop().catch(() => {})
+        isRunningRef.current = false
       }
     }
   }, [isScanning, isMounted])
 
-  // Don't render scanner UI until mounted (prevents hydration mismatch)
+  const handleStopScanning = () => {
+    if (scannerRef.current && isRunningRef.current) {
+      scannerRef.current.stop().catch(() => {})
+      isRunningRef.current = false
+    }
+    setIsScanning(false)
+  }
+
   if (!isMounted) {
     return null
   }
@@ -67,7 +84,10 @@ export function BarcodeScanner() {
     <div className="space-y-3">
       {!isScanning ? (
         <Button
-          onClick={() => setIsScanning(true)}
+          onClick={() => {
+            setError("")
+            setIsScanning(true)
+          }}
           className="w-full"
           variant="secondary"
         >
@@ -77,10 +97,10 @@ export function BarcodeScanner() {
         <>
           <div
             id="qr-reader"
-            className="w-full rounded-lg overflow-hidden min-h-[300px]"
+            className="w-full rounded-lg overflow-hidden min-h-[300px] bg-black"
           />
           <Button
-            onClick={() => setIsScanning(false)}
+            onClick={handleStopScanning}
             className="w-full"
             variant="destructive"
           >
