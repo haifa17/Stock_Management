@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LogIn } from "lucide-react";
 
 type UserRole = "staff" | "admin";
 
@@ -58,7 +59,7 @@ export default function LoginForm() {
               key={roleKey}
               type="button"
               variant={role === roleKey ? "default" : "outline"}
-              className="flex-1"
+              className="flex-1 cursor-pointer"
               onClick={() => setRole(roleKey)}
               disabled={isPending}
             >
@@ -68,8 +69,12 @@ export default function LoginForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Signing in..." : "Sign In"}
+      <Button
+        type="submit"
+        className="w-full cursor-pointer mt-5"
+        disabled={isPending}
+      >
+        <LogIn size={15} /> {isPending ? "Signing in..." : "Sign In"}
       </Button>
     </form>
   );
