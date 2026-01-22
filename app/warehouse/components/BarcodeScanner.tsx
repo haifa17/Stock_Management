@@ -1,22 +1,30 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Html5Qrcode } from "html5-qrcode";
+import { useState, useEffect, useRef } from "react"
+import { Button } from "@/components/ui/button"
 
 export function BarcodeScanner() {
-  const [scannedCode, setScannedCode] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState("");
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [scannedCode, setScannedCode] = useState("")
+  const [isScanning, setIsScanning] = useState(false)
+  const [error, setError] = useState("")
+  const [isMounted, setIsMounted] = useState(false)
+  const scannerRef = useRef<any>(null)
+
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
-    if (!isScanning) return;
+    if (!isScanning || !isMounted) return
 
     const startScanner = async () => {
       try {
-        const scanner = new Html5Qrcode("qr-reader");
-        scannerRef.current = scanner;
+        // Dynamic import to avoid SSR issues
+        const { Html5Qrcode } = await import("html5-qrcode")
+        
+        const scanner = new Html5Qrcode("qr-reader")
+        scannerRef.current = scanner
 
         await scanner.start(
           { facingMode: "environment" },
@@ -25,30 +33,35 @@ export function BarcodeScanner() {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
-            setScannedCode(decodedText);
-            scanner.stop();
-            setIsScanning(false);
+            setScannedCode(decodedText)
+            scanner.stop().catch(console.error)
+            setIsScanning(false)
           },
           (errorMessage) => {
-            // obligatoire pour TS — mais normal pendant le scan
-            // console.log(errorMessage)
-          },
-        );
+            // Normal errors during scanning - can be ignored
+          }
+        )
       } catch (err) {
-        console.error(err);
-        setError("Impossible d'accéder à la caméra");
-        setIsScanning(false);
+        console.error(err)
+        setError("Impossible d'accéder à la caméra")
+        setIsScanning(false)
       }
-    };
+    }
 
-    // ⏱ attendre que le DOM soit prêt
-    const timeout = setTimeout(startScanner, 100);
+    const timeout = setTimeout(startScanner, 100)
 
     return () => {
-      clearTimeout(timeout);
-      scannerRef.current?.stop();
-    };
-  }, [isScanning]);
+      clearTimeout(timeout)
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(console.error)
+      }
+    }
+  }, [isScanning, isMounted])
+
+  // Don't render scanner UI until mounted (prevents hydration mismatch)
+  if (!isMounted) {
+    return null
+  }
 
   return (
     <div className="space-y-3">
@@ -76,7 +89,9 @@ export function BarcodeScanner() {
         </>
       )}
 
-      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-600 text-center">{error}</p>
+      )}
 
       {scannedCode && (
         <p className="text-sm text-muted-foreground text-center">
@@ -85,5 +100,5 @@ export function BarcodeScanner() {
         </p>
       )}
     </div>
-  );
+  )
 }
