@@ -2,19 +2,26 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Html5Qrcode } from "html5-qrcode";
 
 export function BarcodeScanner() {
   const [scannedCode, setScannedCode] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState("");
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+
+  const scannerRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isScanning) return;
 
+    let isMounted = true;
+
     const startScanner = async () => {
       try {
+        // ✅ dynamic import (VERY IMPORTANT for Vercel)
+        const { Html5Qrcode } = await import("html5-qrcode");
+
+        if (!isMounted) return;
+
         const scanner = new Html5Qrcode("qr-reader");
         scannerRef.current = scanner;
 
@@ -24,15 +31,15 @@ export function BarcodeScanner() {
             fps: 10,
             qrbox: { width: 250, height: 250 },
           },
-          (decodedText) => {
+          (decodedText: string) => {
             setScannedCode(decodedText);
             scanner.stop();
             setIsScanning(false);
           },
-          (errorMessage) => {
-            // obligatoire pour TS — mais normal pendant le scan
-            // console.log(errorMessage)
-          },
+          () => {
+            // required by TypeScript
+            // called continuously when no code is detected
+          }
         );
       } catch (err) {
         console.error(err);
@@ -41,12 +48,16 @@ export function BarcodeScanner() {
       }
     };
 
-    // ⏱ attendre que le DOM soit prêt
-    const timeout = setTimeout(startScanner, 100);
+    // ⏱ allow DOM to mount before scanner starts
+    const timeout = setTimeout(startScanner, 150);
 
     return () => {
+      isMounted = false;
       clearTimeout(timeout);
-      scannerRef.current?.stop();
+
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+      }
     };
   }, [isScanning]);
 
@@ -64,8 +75,9 @@ export function BarcodeScanner() {
         <>
           <div
             id="qr-reader"
-            className="w-full rounded-lg overflow-hidden min-h-[300px]"
+            className="w-full min-h-[300px] rounded-lg overflow-hidden bg-black"
           />
+
           <Button
             onClick={() => setIsScanning(false)}
             className="w-full"
@@ -76,12 +88,16 @@ export function BarcodeScanner() {
         </>
       )}
 
-      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-600 text-center">{error}</p>
+      )}
 
       {scannedCode && (
         <p className="text-sm text-muted-foreground text-center">
           Scanned:{" "}
-          <span className="font-mono text-foreground">{scannedCode}</span>
+          <span className="font-mono text-foreground">
+            {scannedCode}
+          </span>
         </p>
       )}
     </div>
