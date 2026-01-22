@@ -1,29 +1,6 @@
 // Simple mock data store for XpresTrack AI MVP
 
-export type ProductType = "carcass" | "primal" | "cut"
-export type InventoryStatus = "Available" | "Reserved" | "Sold"
-export type OrderStatus = "Pending" | "Confirmed" | "Completed"
-
-export interface InventoryItem {
-  id: string
-  lotId: string
-  name: string
-  type: ProductType
-  quantity: number
-  weight: number
-  arrivalDate: string
-  expiryDate: string
-  status: InventoryStatus
-}
-
-export interface Order {
-  id: string
-  customer: string
-  items: string[]
-  totalWeight: number
-  status: OrderStatus
-  date: string
-}
+import { InventoryItem, Order } from "./types"
 
 export const mockInventory: InventoryItem[] = [
   { id: "1", lotId: "LOT-2026-001", name: "Beef Ribeye", type: "primal", quantity: 25, weight: 187.5, arrivalDate: "2026-01-15", expiryDate: "2026-02-15", status: "Available" },
