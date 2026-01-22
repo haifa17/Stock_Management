@@ -10,30 +10,24 @@ export function BarcodeScanner() {
   const [isLoading, setIsLoading] = useState(false);
 
   const scannerRef = useRef<any>(null);
-  const isMountedRef = useRef(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      stopScanner();
-    };
-  }, []);
 
   const stopScanner = async () => {
     if (scannerRef.current) {
       try {
-        const state = await scannerRef.current.getState();
-        if (state === 2) { // SCANNING state
-          await scannerRef.current.stop();
-        }
+        await scannerRef.current.stop();
+        await scannerRef.current.clear();
       } catch (e) {
-        console.log("Scanner already stopped");
+        // Ignore errors
       }
       scannerRef.current = null;
     }
   };
+
+  useEffect(() => {
+    return () => {
+      stopScanner();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isScanning) {
@@ -41,81 +35,85 @@ export function BarcodeScanner() {
       return;
     }
 
-    let timeoutId: NodeJS.Timeout;
+    let mounted = true;
+    setIsLoading(true);
+    setError("");
 
-    const startScanner = async () => {
-      setIsLoading(true);
-      setError("");
-
+    const initScanner = async () => {
       try {
-        // Wait for DOM
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         const element = document.getElementById("qr-reader");
-        if (!element) {
-          throw new Error("Scanner element not found in DOM");
+        if (!element || !mounted) {
+          throw new Error("Element not ready");
         }
 
-        if (!isMountedRef.current) return;
-
-        // Dynamic import with error handling
-        let Html5Qrcode;
-        try {
-          const module = await import("html5-qrcode");
-          Html5Qrcode = module.Html5Qrcode;
-        } catch (importError) {
-          console.error("Failed to import html5-qrcode:", importError);
-          throw new Error("Failed to load scanner library");
-        }
-
-        if (!isMountedRef.current) return;
-
-        // Stop any existing scanner
+        // Clean up any existing scanner
         await stopScanner();
 
-        if (!isMountedRef.current) return;
+        if (!mounted) return;
+
+        const { Html5Qrcode } = await import("html5-qrcode");
+        
+        if (!mounted) return;
+
+        // Check for cameras
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (!devices || devices.length === 0) {
+            throw new Error("Aucune caméra trouvée");
+          }
+        } catch (err) {
+          throw new Error("Impossible d'accéder aux caméras");
+        }
+
+        if (!mounted) return;
 
         const scanner = new Html5Qrcode("qr-reader");
         scannerRef.current = scanner;
 
-        // Get camera devices
-        const devices = await Html5Qrcode.getCameras();
-        if (!devices || devices.length === 0) {
-          throw new Error("No camera found on device");
-        }
-
-        if (!isMountedRef.current) return;
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+          videoConstraints: {
+            facingMode: "environment"
+          }
+        };
 
         await scanner.start(
           { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
-          },
+          config,
           (decodedText: string) => {
-            if (isMountedRef.current) {
+            console.log("Code detected:", decodedText);
+            if (mounted) {
               setScannedCode(decodedText);
               setIsScanning(false);
             }
           },
           (errorMessage: string) => {
-            // Scanning error - ignore, happens continuously
+            // Continuous scanning errors - ignore
           }
         );
 
-        if (isMountedRef.current) {
+        if (mounted) {
           setIsLoading(false);
+          console.log("Scanner started successfully");
         }
+
       } catch (err: any) {
-        console.error("Scanner initialization error:", err);
-        if (isMountedRef.current) {
-          let errorMsg = "Impossible d'accéder à la caméra";
+        console.error("Scanner error:", err);
+        
+        if (mounted) {
+          let errorMsg = "Erreur lors de l'initialisation";
           
           if (err?.name === "NotAllowedError" || err?.message?.includes("Permission")) {
-            errorMsg = "Accès à la caméra refusé. Veuillez autoriser l'accès.";
-          } else if (err?.name === "NotFoundError") {
-            errorMsg = "Aucune caméra trouvée sur cet appareil";
+            errorMsg = "⚠️ Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur";
+          } else if (err?.name === "NotFoundError" || err?.message?.includes("caméra")) {
+            errorMsg = "Aucune caméra détectée sur cet appareil";
+          } else if (err?.name === "NotReadableError") {
+            errorMsg = "La caméra est utilisée par une autre application";
           } else if (err?.message) {
             errorMsg = err.message;
           }
@@ -127,19 +125,13 @@ export function BarcodeScanner() {
       }
     };
 
-    timeoutId = setTimeout(startScanner, 100);
+    initScanner();
 
     return () => {
-      clearTimeout(timeoutId);
+      mounted = false;
       stopScanner();
     };
   }, [isScanning]);
-
-  const handleStopScanning = () => {
-    setIsScanning(false);
-    setError("");
-    setIsLoading(false);
-  };
 
   const handleStartScanning = () => {
     setError("");
@@ -147,60 +139,81 @@ export function BarcodeScanner() {
     setIsScanning(true);
   };
 
+  const handleStopScanning = () => {
+    setIsScanning(false);
+    setError("");
+    setIsLoading(false);
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {!isScanning ? (
         <Button
           onClick={handleStartScanning}
           className="w-full"
           variant="secondary"
-          disabled={isLoading}
+          size="lg"
         >
           📷 Scanner QR / Code-barres
         </Button>
       ) : (
-        <>
+        <div className="space-y-3">
           {isLoading && (
-            <div className="text-center p-4">
-              <p className="text-sm text-muted-foreground">
-                Chargement de la caméra...
-              </p>
+            <div className="text-center p-6 bg-gray-100 rounded-lg">
+              <div className="animate-pulse">
+                <div className="text-2xl mb-2">📷</div>
+                <p className="text-sm text-gray-600 font-medium">
+                  Initialisation de la caméra...
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Autorisez l'accès si demandé
+                </p>
+              </div>
             </div>
           )}
 
           <div
             id="qr-reader"
-            className="w-full min-h-[300px] rounded-lg overflow-hidden bg-black"
-            style={{ display: isLoading ? 'none' : 'block' }}
+            className="w-full rounded-lg overflow-hidden bg-black"
+            style={{ 
+              minHeight: '300px',
+              display: isLoading ? 'none' : 'block'
+            }}
           />
 
           <Button
             onClick={handleStopScanning}
             className="w-full"
             variant="destructive"
-            disabled={isLoading}
+            size="lg"
           >
             ❌ Arrêter le scan
           </Button>
-        </>
+        </div>
       )}
 
       {error && (
-        <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-          <p className="text-sm text-red-600 text-center font-medium">
+        <div className="p-4 rounded-lg bg-red-50 border-2 border-red-200">
+          <p className="text-sm text-red-700 font-medium text-center">
             {error}
+          </p>
+          <p className="text-xs text-red-600 text-center mt-2">
+            Vérifiez que votre navigateur a l'autorisation d'accéder à la caméra
           </p>
         </div>
       )}
 
       {scannedCode && (
-        <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-          <p className="text-sm text-green-800 text-center">
-            ✅ Code scanné
-          </p>
-          <p className="font-mono font-semibold text-center mt-1 text-green-900">
-            {scannedCode}
-          </p>
+        <div className="p-4 rounded-lg bg-green-50 border-2 border-green-200">
+          <div className="text-center">
+            <p className="text-lg mb-2">✅</p>
+            <p className="text-sm text-green-700 font-medium mb-2">
+              Code scanné avec succès
+            </p>
+            <p className="font-mono font-bold text-green-900 text-lg break-all">
+              {scannedCode}
+            </p>
+          </div>
         </div>
       )}
     </div>
