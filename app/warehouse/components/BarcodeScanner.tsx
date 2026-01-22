@@ -1,15 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  BrowserMultiFormatReader,
-  IScannerControls,
-} from "@zxing/browser";
+import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 import { Button } from "@/components/ui/button";
 
 export function BarcodeScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState("");
@@ -17,26 +15,37 @@ export function BarcodeScanner() {
   const startScan = async () => {
     setResult("");
 
-    const codeReader = new BrowserMultiFormatReader();
+    // ✅ SAFARI-SAFE CAMERA OPEN
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" }, // simple only
+      },
+      audio: false,
+    });
 
-    const controls = await codeReader.decodeFromVideoDevice(
-      undefined, // back camera auto
-      videoRef.current!,
-      (res, err) => {
-        if (res) {
-          setResult(res.getText());
-          stopScan();
-        }
+    streamRef.current = stream;
+
+    const video = videoRef.current!;
+    video.srcObject = stream;
+    await video.play();
+
+    const reader = new BrowserMultiFormatReader();
+
+    const controls = await reader.decodeFromVideoElement(video, (res, err) => {
+      if (res) {
+        setResult(res.getText());
+        stopScan();
       }
-    );
+    });
 
     controlsRef.current = controls;
     setScanning(true);
   };
 
   const stopScan = () => {
-    controlsRef.current?.stop(); // ✅ CORRECT
-    controlsRef.current = null;
+    controlsRef.current?.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
     setScanning(false);
   };
 
@@ -52,30 +61,17 @@ export function BarcodeScanner() {
         <>
           <video
             ref={videoRef}
-            className="w-full rounded-lg bg-black"
-            style={{ height: 350 }}
             playsInline
             muted
             autoPlay
+            className="w-full rounded-lg bg-black"
+            style={{ height: 350 }}
           />
 
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={stopScan}
-          >
+          <Button variant="destructive" className="w-full" onClick={stopScan}>
             ❌ Arrêter
           </Button>
         </>
-      )}
-
-      {result && (
-        <div className="p-4 bg-green-50 border rounded">
-          ✅ Code scanné :
-          <div className="font-mono font-bold break-all mt-2">
-            {result}
-          </div>
-        </div>
       )}
     </div>
   );
