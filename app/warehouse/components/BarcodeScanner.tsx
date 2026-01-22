@@ -1,78 +1,95 @@
-"use client";
+"use client"
 
-import { useRef, useState } from "react";
-import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef } from "react"
+import { Button } from "@/components/ui/button"
+import { Html5Qrcode } from "html5-qrcode"
 
 export function BarcodeScanner() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [scannedCode, setScannedCode] = useState("")
+  const [isScanning, setIsScanning] = useState(false)
+  const [error, setError] = useState("")
+  const scannerRef = useRef<Html5Qrcode | null>(null)
 
-  const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState("");
-
-  const startScan = async () => {
-    setResult("");
-
-    // ✅ SAFARI-SAFE CAMERA OPEN
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: "environment" }, // simple only
-      },
-      audio: false,
-    });
-
-    streamRef.current = stream;
-
-    const video = videoRef.current!;
-    video.srcObject = stream;
-    await video.play();
-
-    const reader = new BrowserMultiFormatReader();
-
-    const controls = await reader.decodeFromVideoElement(video, (res, err) => {
-      if (res) {
-        setResult(res.getText());
-        stopScan();
+  useEffect(() => {
+    return () => {
+      // Cleanup: stop scanner on unmount
+      if (scannerRef.current?.isScanning) {
+        scannerRef.current.stop()
       }
-    });
+    }
+  }, [])
 
-    controlsRef.current = controls;
-    setScanning(true);
-  };
+  const startRealScan = async () => {
+    setIsScanning(true)
+    setError("")
+
+    try {
+      const scanner = new Html5Qrcode("qr-reader")
+      scannerRef.current = scanner
+
+      await scanner.start(
+        { facingMode: "environment" }, // Caméra arrière
+        {
+          fps: 10, // Frames par seconde
+          qrbox: { width: 250, height: 250 }, // Zone de scan
+        },
+        (decodedText) => {
+          // Succès du scan
+          setScannedCode(decodedText)
+          scanner.stop()
+          setIsScanning(false)
+        },
+        (errorMessage) => {
+          // Erreur de scan (normal si rien n'est détecté)
+          console.log(errorMessage)
+        }
+      )
+    } catch (err) {
+      console.error("Erreur de scan:", err)
+      setError("Impossible d'accéder à la caméra")
+      setIsScanning(false)
+    }
+  }
 
   const stopScan = () => {
-    controlsRef.current?.stop();
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    setScanning(false);
-  };
+    if (scannerRef.current?.isScanning) {
+      scannerRef.current.stop()
+      setIsScanning(false)
+    }
+  }
 
   return (
-    <div className="space-y-4">
-      {!scanning && (
-        <Button onClick={startScan} className="w-full">
-          📷 Scanner code-barres
+    <div className="space-y-3">
+      {!isScanning ? (
+        <Button
+          onClick={startRealScan}
+          className="w-full cursor-pointer"
+          variant="secondary"
+        >
+          Scan QR / Barcode
         </Button>
-      )}
-
-      {scanning && (
+      ) : (
         <>
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            autoPlay
-            className="w-full rounded-lg bg-black"
-            style={{ height: 350 }}
-          />
-
-          <Button variant="destructive" className="w-full" onClick={stopScan}>
-            ❌ Arrêter
+          <div id="qr-reader" className="w-full rounded-lg overflow-hidden" />
+          <Button
+            onClick={stopScan}
+            className="w-full"
+            variant="destructive"
+          >
+            Arrêter le scan
           </Button>
         </>
       )}
+
+      {error && (
+        <p className="text-sm text-red-600 text-center">{error}</p>
+      )}
+
+      {scannedCode && (
+        <p className="text-sm text-muted-foreground text-center">
+          Scanned: <span className="font-mono text-foreground">{scannedCode}</span>
+        </p>
+      )}
     </div>
-  );
+  )
 }
