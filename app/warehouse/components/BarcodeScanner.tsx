@@ -9,18 +9,44 @@ export function BarcodeScanner() {
   const [error, setError] = useState("");
 
   const scannerRef = useRef<any>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isScanning) return;
 
-    let isMounted = true;
-
     const startScanner = async () => {
       try {
-        // ✅ dynamic import (VERY IMPORTANT for Vercel)
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Check if element exists
+        const element = document.getElementById("qr-reader");
+        if (!element) {
+          throw new Error("Scanner element not found");
+        }
+
+        if (!isMountedRef.current) return;
+
+        // Dynamic import
         const { Html5Qrcode } = await import("html5-qrcode");
 
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
+
+        // Check if scanner already exists
+        if (scannerRef.current) {
+          try {
+            await scannerRef.current.stop();
+          } catch (e) {
+            // Ignore stop errors
+          }
+        }
 
         const scanner = new Html5Qrcode("qr-reader");
         scannerRef.current = scanner;
@@ -32,44 +58,60 @@ export function BarcodeScanner() {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText: string) => {
-            setScannedCode(decodedText);
-            scanner.stop();
-            setIsScanning(false);
+            if (isMountedRef.current) {
+              setScannedCode(decodedText);
+              setIsScanning(false);
+              scanner.stop().catch(() => {});
+            }
           },
           () => {
-            // required by TypeScript
-            // called continuously when no code is detected
+            // Error callback - required by library
           }
         );
-      } catch (err) {
-        console.error(err);
-        setError("Impossible d'accéder à la caméra");
-        setIsScanning(false);
+      } catch (err: any) {
+        console.error("Scanner error:", err);
+        if (isMountedRef.current) {
+          setError(
+            err?.message?.includes("Permission") 
+              ? "Accès à la caméra refusé" 
+              : "Impossible d'accéder à la caméra"
+          );
+          setIsScanning(false);
+        }
       }
     };
 
-    // ⏱ allow DOM to mount before scanner starts
-    const timeout = setTimeout(startScanner, 150);
+    startScanner();
 
     return () => {
-      isMounted = false;
-      clearTimeout(timeout);
-
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        scannerRef.current
+          .stop()
+          .catch(() => {})
+          .finally(() => {
+            scannerRef.current = null;
+          });
       }
     };
   }, [isScanning]);
+
+  const handleStopScanning = () => {
+    setIsScanning(false);
+    setError("");
+  };
 
   return (
     <div className="space-y-3">
       {!isScanning ? (
         <Button
-          onClick={() => setIsScanning(true)}
-          className="w-full cursor-pointer"
+          onClick={() => {
+            setError("");
+            setIsScanning(true);
+          }}
+          className="w-full"
           variant="secondary"
         >
-          Scan QR / Barcode
+          📷 Scanner QR / Code-barres
         </Button>
       ) : (
         <>
@@ -79,26 +121,30 @@ export function BarcodeScanner() {
           />
 
           <Button
-            onClick={() => setIsScanning(false)}
+            onClick={handleStopScanning}
             className="w-full"
             variant="destructive"
           >
-            Arrêter le scan
+            ❌ Arrêter le scan
           </Button>
         </>
       )}
 
       {error && (
-        <p className="text-sm text-red-600 text-center">{error}</p>
+        <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+          <p className="text-sm text-red-600 text-center">{error}</p>
+        </div>
       )}
 
       {scannedCode && (
-        <p className="text-sm text-muted-foreground text-center">
-          Scanned:{" "}
-          <span className="font-mono text-foreground">
-            {scannedCode}
-          </span>
-        </p>
+        <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+          <p className="text-sm text-green-800 text-center">
+            ✅ Code scanné:{" "}
+            <span className="font-mono font-semibold">
+              {scannedCode}
+            </span>
+          </p>
+        </div>
       )}
     </div>
   );
