@@ -1,47 +1,91 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { CustomSelect } from "@/components/ui/CustomSelect"
-import { InventoryStatus, ProductType } from "@/lib/types"
-import { FormData, getInitialFormData } from "../utils"
-import { PRODUCT_STATUSES, PRODUCT_TYPES } from "../constants"
-
-
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { InventoryStatus, ProductType } from "@/lib/types";
+import { FormData, getInitialFormData } from "../utils";
+import { PRODUCT_STATUSES, PRODUCT_TYPES } from "../constants";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 export function ProductForm() {
-  const [formData, setFormData] = useState<FormData>(getInitialFormData())
-  const [submitted, setSubmitted] = useState(false)
+  const router = useRouter();
+  const [formData, setFormData] = useState<FormData>(getInitialFormData());
+  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
-    setSubmitted(true)
-    
-    // Reset form after 2 seconds
-    setTimeout(() => {
-      setSubmitted(false)
-      setFormData(getInitialFormData())
-    }, 2000)
-  }
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+    try {
+      // Envoyer les données à Airtable via l'API
+      const response = await fetch("/api/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          lotId: formData.lotId,
+          type: formData.type,
+          quantity: parseInt(formData.quantity),
+          weight: parseFloat(formData.weight),
+          status: formData.status,
+          arrivalDate: formData.arrivalDate,
+          expiryDate: formData.expiryDate,
+        }),
+      });
 
-  const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+      if (response.ok) {
+        setSubmitted(true);
+        toast.success("Added Successuffly");
+        // Réinitialiser le formulaire après 2 secondes
+        setTimeout(() => {
+          setSubmitted(false);
+          setFormData(getInitialFormData());
+          router.refresh(); // Rafraîchir les données
+        }, 2000);
+      } else {
+        const data = await response.json();
+        setError(data.error || "Failed to add product");
+        toast.error("Failed to add product");
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      setError("Erreur de connexion");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const updateField = <K extends keyof FormData>(
+    field: K,
+    value: FormData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   if (submitted) {
     return (
       <div className="py-8 text-center">
         <p className="text-lg font-medium text-green-600">Product Added!</p>
-        <p className="text-sm text-muted-foreground">Lot ID: {formData.lotId}</p>
+        <p className="text-sm text-muted-foreground">
+          Lot ID: {formData.lotId}
+        </p>
       </div>
-    )
+    );
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="name">Product Name</Label>
         <Input
@@ -50,6 +94,7 @@ export function ProductForm() {
           value={formData.name}
           onChange={(e) => updateField("name", e.target.value)}
           required
+          disabled={isSubmitting}
         />
       </div>
 
@@ -73,6 +118,7 @@ export function ProductForm() {
             value={formData.quantity}
             onChange={(e) => updateField("quantity", e.target.value)}
             required
+            disabled={isSubmitting}
           />
         </div>
         <div className="space-y-2">
@@ -85,6 +131,7 @@ export function ProductForm() {
             value={formData.weight}
             onChange={(e) => updateField("weight", e.target.value)}
             required
+            disabled={isSubmitting}
           />
         </div>
       </div>
@@ -103,6 +150,7 @@ export function ProductForm() {
             value={formData.arrivalDate}
             onChange={(e) => updateField("arrivalDate", e.target.value)}
             required
+            disabled={isSubmitting}
           />
         </div>
         <div className="space-y-2">
@@ -113,6 +161,7 @@ export function ProductForm() {
             value={formData.expiryDate}
             onChange={(e) => updateField("expiryDate", e.target.value)}
             required
+            disabled={isSubmitting}
           />
         </div>
       </div>
@@ -127,9 +176,13 @@ export function ProductForm() {
         />
       </div>
 
-      <Button type="submit" className="w-full cursor-pointer mt-5">
-        Add to Inventory
+      <Button
+        type="submit"
+        className="w-full cursor-pointer mt-5"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Adding..." : "Add to Inventory"}
       </Button>
     </form>
-  )
+  );
 }

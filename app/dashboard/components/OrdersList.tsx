@@ -1,34 +1,58 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Order, OrderStatus } from "@/lib/types"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Order, OrderStatus } from "@/lib/types";
+import { toast } from "react-toastify";
 
 interface OrdersListProps {
-  initialOrders: Order[]
+  initialOrders: Order[];
 }
 
-const ORDER_STATUSES: OrderStatus[] = ["Pending", "Confirmed", "Completed"]
+const ORDER_STATUSES: OrderStatus[] = ["Pending", "Confirmed", "Completed"];
 
 const ORDER_STATUS_STYLES: Record<OrderStatus, string> = {
   Pending: "bg-yellow-100 text-yellow-800",
   Confirmed: "bg-blue-100 text-blue-800",
   Completed: "bg-green-100 text-green-800",
-}
+};
 
 export function OrdersList({ initialOrders }: OrdersListProps) {
-  const [orders, setOrders] = useState<Order[]>(initialOrders)
+  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const updateOrderStatus = (id: string, status: OrderStatus) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === id ? { ...order, status } : order
-      )
-    )
-  }
+  const updateOrderStatus = async (order: Order, status: OrderStatus) => {
+    setIsUpdating(true);
+    try {
+      // Appeler l'API pour mettre à jour Airtable
+      const response = await fetch(`/api/order/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
 
+      if (response.ok) {
+        const updatedOrder: Order = await response.json();
+        // Update local state after DB confirms
+        setOrders((prevOrders) =>
+          prevOrders.map((o) =>
+            o.id === order.id ? { ...o, status: status } : o,
+          ),
+        );
+
+        toast.success("Status updated successufly");
+      } else {
+        console.error("Error updating status");
+        toast.error("Error updating status");
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -39,7 +63,9 @@ export function OrdersList({ initialOrders }: OrdersListProps) {
           <div key={order.id} className="border rounded-lg p-3">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <p className="font-semibold text-foreground">{order.customer}</p>
+                <p className="font-semibold text-foreground">
+                  {order.customer}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {order.id} • {order.date}
                 </p>
@@ -58,7 +84,8 @@ export function OrdersList({ initialOrders }: OrdersListProps) {
                   variant={order.status === status ? "default" : "outline"}
                   size="sm"
                   className="flex-1 text-xs"
-                  onClick={() => updateOrderStatus(order.id, status)}
+                  onClick={() => updateOrderStatus(order, status)}
+                  disabled={isUpdating}
                 >
                   {status}
                 </Button>
@@ -68,5 +95,5 @@ export function OrdersList({ initialOrders }: OrdersListProps) {
         ))}
       </CardContent>
     </Card>
-  )
+  );
 }

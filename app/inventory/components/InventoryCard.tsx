@@ -1,25 +1,45 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { useInventoryStore } from "@/lib/store/inventory-store"
-import { InventoryItem, InventoryStatus } from "@/lib/types"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useInventoryStore } from "@/lib/store/inventory-store";
+import { InventoryItem, InventoryStatus } from "@/lib/types";
+import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
+import { useState } from "react";
+import { toast } from "react-toastify";
 
 interface InventoryCardProps {
-  item: InventoryItem
+  item: InventoryItem;
 }
-
-const STATUS_STYLES: Record<InventoryStatus, string> = {
-  Available: "bg-green-100 text-green-800",
-  Reserved: "bg-yellow-100 text-yellow-800",
-  Sold: "bg-gray-100 text-gray-800",
-}
-
-const STATUS_OPTIONS: InventoryStatus[] = ["Available", "Reserved", "Sold"]
 
 export function InventoryCard({ item }: InventoryCardProps) {
-  const { updateItemStatus } = useInventoryStore()
+  const { updateItemStatus } = useInventoryStore();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const handleUpdateStatus = async (status: InventoryStatus) => {
+    setIsUpdating(true);
+    try {
+      // Appeler l'API pour mettre à jour Airtable
+      const response = await fetch(`/api/inventory/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      if (response.ok) {
+        // Mettre à jour l'état local
+        updateItemStatus(item.id, status);
+        toast.success("Status updated successufly");
+      } else {
+        console.error("Error updating status");
+        toast.error("Error updating status");
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <Card>
@@ -27,15 +47,19 @@ export function InventoryCard({ item }: InventoryCardProps) {
         <div className="flex justify-between items-start mb-2">
           <div>
             <h3 className="font-semibold text-foreground">{item.name}</h3>
-            <p className="text-xs text-muted-foreground font-mono">{item.lotId}</p>
+            <p className="text-xs text-muted-foreground font-mono">
+              {item.lotId}
+            </p>
           </div>
           <Badge className={STATUS_STYLES[item.status]}>{item.status}</Badge>
         </div>
-        
+
         <div className="grid grid-cols-3 gap-2 text-sm mb-3">
           <div>
             <p className="text-muted-foreground">Type</p>
-            <p className="font-medium capitalize text-foreground">{item.type}</p>
+            <p className="font-medium capitalize text-foreground">
+              {item.type}
+            </p>
           </div>
           <div>
             <p className="text-muted-foreground">Qty</p>
@@ -60,8 +84,9 @@ export function InventoryCard({ item }: InventoryCardProps) {
               key={status}
               variant={item.status === status ? "default" : "outline"}
               size="sm"
-              className="flex-1 text-xs"
-              onClick={() => updateItemStatus(item.id, status)}
+              className="flex-1 text-xs cursor-pointer"
+              onClick={() => handleUpdateStatus(status)}
+              disabled={isUpdating}
             >
               {status}
             </Button>
@@ -69,5 +94,5 @@ export function InventoryCard({ item }: InventoryCardProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

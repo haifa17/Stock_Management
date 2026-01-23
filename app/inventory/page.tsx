@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { mockInventory } from "@/lib/data";
 import { InventoryFilters } from "./components/InventoryFilters";
 import { InventoryList } from "./components/InventoryList";
 import LogoutButton from "@/components/buttons/LogoutButton";
+import { inventoryService } from "@/lib/airtable/inventory-service";
 
-export default function InventoryPage() {
+export const revalidate = 0; // Désactiver le cache pour avoir les données en temps réel
+
+export default async function InventoryPage() {
+  const inventory = await inventoryService.getAll();
+
   return (
     <main className="min-h-screen bg-muted p-4">
       <div className="max-w-md lg:max-w-2xl mx-auto space-y-4">
@@ -17,7 +21,7 @@ export default function InventoryPage() {
 
         {/* Filters & Inventory List - Client Components */}
         <InventoryFilters />
-        <InventoryList initialInventory={mockInventory} />
+        <InventoryList initialInventory={inventory} />
 
         {/* Navigation */}
         <div className="flex gap-2">
