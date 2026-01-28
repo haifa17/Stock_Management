@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { OrderStatus } from '@/lib/types'
 import { ordersService } from '@/lib/airtable/orders-service'
+import { OrderStatus } from '@/lib/airtable/airtable-types'
 
 // GET - Récupérer tous les items ou filtrer
 export async function GET(request: NextRequest) {

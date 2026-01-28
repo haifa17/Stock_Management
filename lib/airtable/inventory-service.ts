@@ -1,158 +1,138 @@
 import { airtable, TABLES } from "./config";
-import type {
-  AirtableInventoryFields,
-  InventoryItem,
-  InventoryStatus,
-} from "./types";
+import { AirtableLotFields, BatchStatus } from "./airtable-types";
 
-// Transformer un enregistrement Airtable en InventoryItem
-function transformInventoryRecord(record: any): InventoryItem {
-  const fields = record.fields as AirtableInventoryFields;
+// Transform lot record to match your existing InventoryItem structure
+function transformLotToInventoryItem(record: any): any {
+  const fields = record.fields as AirtableLotFields;
+  const batchStatus = fields.Status as BatchStatus;
+  let status = mapBatchStatusToInventoryStatus(batchStatus);
 
+  // Apply low stock condition
+  if (batchStatus === "Active" && fields.CurrentStock < 20) {
+    status = "Low Stock";
+  }
   return {
     id: record.id,
-    name: fields.Name,
     lotId: fields.LotId,
-    type: fields.Type,
-    quantity: Number(fields.Quantity) || 0,
-    weight: Number(fields.Weight) || 0,
-    status: fields.Status,
-    arrivalDate: fields.ArrivalDate,
-    expiryDate: fields.ExpiryDate,
+    name: fields.Product,
+    type: "primal", // You can determine this from product if needed
+    quantity: Math.round(fields.CurrentStock), // Convert kg to pieces if needed
+    weight: Number(fields.CurrentStock) || 0,
+    status,
+    arrivalDate: fields.ArrivalDate
+      ? new Date(fields.ArrivalDate).toLocaleDateString()
+      : "",
+    expiryDate: fields.ProductionDate
+      ? new Date(fields.ProductionDate).toLocaleDateString()
+      : "",
+    // Additional lot fields
+    provider: fields.Provider,
+    grade: fields.Grade,
+    brand: fields.Brand,
+    origin: fields.Origin,
+    condition: fields.Condition,
+    qtyReceived: fields.QtyReceived,
+    notes: fields.Notes,
   };
 }
 
-// Service pour gérer l'inventaire
+// Map BatchStatus to InventoryStatus
+function mapBatchStatusToInventoryStatus(batchStatus: BatchStatus): string {
+  switch (batchStatus) {
+    case "Active":
+      return "Available";
+    case "Depleted":
+      return "Sold";
+    case "Expired":
+      return "Reserved"; // or create a new status
+    default:
+      return "Available";
+  }
+}
+
 export const inventoryService = {
-  // Récupérer tous les items
-  async getAll(): Promise<InventoryItem[]> {
+  // Get all lots as inventory items
+  async getAll(): Promise<any[]> {
     try {
-      const records = await airtable(TABLES.INVENTORY)
+      const records = await airtable(TABLES.LOTS)
         .select({
           sort: [{ field: "ArrivalDate", direction: "desc" }],
         })
         .all();
 
-      return records.map(transformInventoryRecord);
+      return records.map(transformLotToInventoryItem);
     } catch (error) {
-      console.error("Erreur lors de la récupération de l'inventaire:", error);
+      console.error("Error fetching inventory:", error);
       throw error;
     }
   },
 
-  // Récupérer un item par ID
-  async getById(id: string): Promise<InventoryItem | null> {
+  // Get lot by ID
+  async getById(id: string): Promise<any | null> {
     try {
-      const record = await airtable(TABLES.INVENTORY).find(id);
-      return transformInventoryRecord(record);
+      const record = await airtable(TABLES.LOTS).find(id);
+      return transformLotToInventoryItem(record);
     } catch (error) {
-      console.error("Erreur lors de la récupération de l'item:", error);
+      console.error("Error fetching item:", error);
       return null;
     }
   },
 
-  // Créer un nouvel item
-  async create(data: Omit<InventoryItem, "id">): Promise<InventoryItem> {
+  // Update lot status
+  async updateStatus(id: string, status: string): Promise<any> {
     try {
-      const record = await airtable(TABLES.INVENTORY).create({
-        Name: data.name,
-        LotId: data.lotId,
-        Type: data.type,
-        Quantity: data.quantity,
-        Weight: data.weight,
-        Status: data.status,
-        ArrivalDate: data.arrivalDate,
-        ExpiryDate: data.expiryDate,
-      } as AirtableInventoryFields);
+      // Map inventory status back to batch status
+      let batchStatus: BatchStatus = "Active";
+      if (status === "Sold") batchStatus = "Depleted";
+      if (status === "Reserved") batchStatus = "Expired";
+      console.log("Updating Airtable:", id, batchStatus);
 
-      return transformInventoryRecord(record);
-    } catch (error) {
-      console.error("Erreur lors de la création de l'item:", error);
-      throw error;
-    }
-  },
-
-  // Mettre à jour le statut d'un item
-  async updateStatus(
-    id: string,
-    status: InventoryStatus,
-  ): Promise<InventoryItem> {
-    try {
-      const record = await airtable(TABLES.INVENTORY).update(id, {
-        Status: status,
+      const record = await airtable(TABLES.LOTS).update(id, {
+        Status: batchStatus,
       });
 
-      return transformInventoryRecord(record);
+      return transformLotToInventoryItem(record);
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut:", error);
+      console.error("Error updating status:", error);
       throw error;
     }
   },
 
-  // Mettre à jour un item complet
-  async update(
-    id: string,
-    data: Partial<Omit<InventoryItem, "id">>,
-  ): Promise<InventoryItem> {
+  // Get by status
+  async getByStatus(status: string): Promise<any[]> {
     try {
-      const updateData: Partial<AirtableInventoryFields> = {};
+      // Map inventory status to batch status
+      let batchStatus: BatchStatus = "Active";
+      if (status === "Sold") batchStatus = "Depleted";
+      if (status === "Reserved") batchStatus = "Expired";
 
-      if (data.name) updateData.Name = data.name;
-      if (data.type) updateData.Type = data.type;
-      if (data.quantity !== undefined) updateData.Quantity = data.quantity;
-      if (data.weight !== undefined) updateData.Weight = data.weight;
-      if (data.status) updateData.Status = data.status;
-      if (data.arrivalDate) updateData.ArrivalDate = data.arrivalDate;
-      if (data.expiryDate) updateData.ExpiryDate = data.expiryDate;
-
-      const record = await airtable(TABLES.INVENTORY).update(id, updateData);
-      return transformInventoryRecord(record);
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de l'item:", error);
-      throw error;
-    }
-  },
-
-  // Supprimer un item
-  async delete(id: string): Promise<void> {
-    try {
-      await airtable(TABLES.INVENTORY).destroy(id);
-    } catch (error) {
-      console.error("Erreur lors de la suppression de l'item:", error);
-      throw error;
-    }
-  },
-
-  // Filtrer par statut
-  async getByStatus(status: InventoryStatus): Promise<InventoryItem[]> {
-    try {
-      const records = await airtable(TABLES.INVENTORY)
+      const records = await airtable(TABLES.LOTS)
         .select({
-          filterByFormula: `{Status} = "${status}"`,
+          filterByFormula: `{Status} = "${batchStatus}"`,
           sort: [{ field: "ArrivalDate", direction: "desc" }],
         })
         .all();
 
-      return records.map(transformInventoryRecord);
+      return records.map(transformLotToInventoryItem);
     } catch (error) {
-      console.error("Erreur lors du filtrage par statut:", error);
+      console.error("Error filtering by status:", error);
       throw error;
     }
   },
 
-  // Récupérer les items en faible stock
-  async getLowStock(threshold: number = 20): Promise<InventoryItem[]> {
+  // Get low stock lots
+  async getLowStock(threshold: number = 20): Promise<any[]> {
     try {
-      const records = await airtable(TABLES.INVENTORY)
+      const records = await airtable(TABLES.LOTS)
         .select({
-          filterByFormula: `{Quantity} < ${threshold}`,
-          sort: [{ field: "Quantity", direction: "asc" }],
+          filterByFormula: `AND({Status} = "Active", {CurrentStock} < ${threshold})`,
+          sort: [{ field: "CurrentStock", direction: "asc" }],
         })
         .all();
 
-      return records.map(transformInventoryRecord);
+      return records.map(transformLotToInventoryItem);
     } catch (error) {
-      console.error("Erreur lors de la récupération du stock faible:", error);
+      console.error("Error fetching low stock:", error);
       throw error;
     }
   },

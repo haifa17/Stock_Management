@@ -1,9 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useInventoryStore } from "@/lib/store/inventory-store";
-import { InventoryCard } from "./InventoryCard";
-import { InventoryItem } from "@/lib/types";
 import {
   Pagination,
   PaginationContent,
@@ -11,54 +7,38 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useState } from "react";
+import { SalesCard } from "./SalesCard";
+import { SaleWithProduct } from "../types";
 
-interface InventoryListProps {
-  initialInventory: InventoryItem[];
+
+interface SalesListProps {
+  sales: SaleWithProduct[];
 }
-
 const ITEMS_PER_PAGE = 5;
 
-export function InventoryList({ initialInventory }: InventoryListProps) {
-  const { inventory, filter, setInventory } = useInventoryStore();
+export function SalesList({ sales }: SalesListProps) {
   const [currentPage, setCurrentPage] = useState(1);
-
-  useEffect(() => {
-    if (inventory.length === 0) {
-      setInventory(initialInventory);
-    }
-  }, [initialInventory, inventory.length, setInventory]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filter]);
-
-  const filteredInventory =
-    filter === "all"
-      ? inventory
-      : inventory.filter((item) => item.status === filter);
-
-  const totalPages = Math.ceil(filteredInventory.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sales.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentItems = filteredInventory.slice(startIndex, endIndex);
-
+  const currentItems = sales.slice(startIndex, endIndex);
   return (
     <div className="space-y-4">
-      {filteredInventory.length > 0 && (
+      {sales.length > 0 && (
         <div className="text-sm text-muted-foreground text-center">
-          Showing {startIndex + 1}-
-          {Math.min(endIndex, filteredInventory.length)} of{" "}
-          {filteredInventory.length} items
+          Showing {startIndex + 1}-{Math.min(endIndex, sales.length)} of{" "}
+          {sales.length} items
         </div>
       )}
-
       <div className="space-y-3">
-        {currentItems.map((item) => (
-          <InventoryCard key={item.id} item={item} />
+        {currentItems.map((sale) => (
+          <SalesCard key={sale.id} sale={sale} />
         ))}
-        {filteredInventory.length === 0 && (
+
+        {sales.length === 0 && (
           <p className="text-center text-muted-foreground py-8">
-            No items found for this filter.
+            No sales recorded yet.
           </p>
         )}
       </div>

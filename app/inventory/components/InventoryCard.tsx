@@ -1,13 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useInventoryStore } from "@/lib/store/inventory-store";
-import { InventoryItem, InventoryStatus } from "@/lib/types";
-import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
-import { useState } from "react";
+import { InventoryItem } from "@/lib/types";
 import { toast } from "react-toastify";
+import { InventoryStatus } from "@/lib/airtable/airtable-types";
+import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
+
 
 interface InventoryCardProps {
   item: InventoryItem;
@@ -16,10 +18,10 @@ interface InventoryCardProps {
 export function InventoryCard({ item }: InventoryCardProps) {
   const { updateItemStatus } = useInventoryStore();
   const [isUpdating, setIsUpdating] = useState(false);
+
   const handleUpdateStatus = async (status: InventoryStatus) => {
     setIsUpdating(true);
     try {
-      // Appeler l'API pour mettre à jour Airtable
       const response = await fetch(`/api/inventory/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -27,15 +29,15 @@ export function InventoryCard({ item }: InventoryCardProps) {
       });
 
       if (response.ok) {
-        // Mettre à jour l'état local
         updateItemStatus(item.id, status);
-        toast.success("Status updated successufly");
+        toast.success("Status updated successfully");
       } else {
         console.error("Error updating status");
         toast.error("Error updating status");
       }
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("Error:", error);
+      toast.error("Connection error");
     } finally {
       setIsUpdating(false);
     }
@@ -54,6 +56,30 @@ export function InventoryCard({ item }: InventoryCardProps) {
           <Badge className={STATUS_STYLES[item.status]}>{item.status}</Badge>
         </div>
 
+        {/* Lot Details */}
+        {(item.provider || item.grade || item.brand) && (
+          <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+            {item.provider && (
+              <div>
+                <p className="text-muted-foreground">Provider</p>
+                <p className="font-medium text-foreground">{item.provider}</p>
+              </div>
+            )}
+            {item.grade && (
+              <div>
+                <p className="text-muted-foreground">Grade</p>
+                <p className="font-medium text-foreground">{item.grade}</p>
+              </div>
+            )}
+            {item.brand && (
+              <div>
+                <p className="text-muted-foreground">Brand</p>
+                <p className="font-medium text-foreground">{item.brand}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-3 gap-2 text-sm mb-3">
           <div>
             <p className="text-muted-foreground">Type</p>
@@ -62,20 +88,40 @@ export function InventoryCard({ item }: InventoryCardProps) {
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">Qty</p>
-            <p className="font-medium text-foreground">{item.quantity} pcs</p>
+            <p className="text-muted-foreground">Current</p>
+            <p className="font-medium text-foreground">{item.weight} kg</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Weight</p>
-            <p className="font-medium text-foreground">{item.weight} kg</p>
+            <p className="text-muted-foreground">Received</p>
+            <p className="font-medium text-foreground">
+              {item.qtyReceived || item.weight} kg
+            </p>
           </div>
         </div>
 
+        {(item.origin || item.condition) && (
+          <div className="flex gap-2 text-xs text-muted-foreground mb-2">
+            {item.origin && <span>Origin: {item.origin}</span>}
+            {item.origin && item.condition && <span>•</span>}
+            {item.condition && <span>Condition: {item.condition}</span>}
+          </div>
+        )}
+
         <div className="flex gap-2 text-xs text-muted-foreground mb-3">
           <span>Arrival: {item.arrivalDate}</span>
-          <span>•</span>
-          <span>Expiry: {item.expiryDate}</span>
+          {item.expiryDate && (
+            <>
+              <span>•</span>
+              <span>Production: {item.expiryDate}</span>
+            </>
+          )}
         </div>
+
+        {item.notes && (
+          <p className="text-xs text-muted-foreground mb-3 italic">
+            Note: {item.notes}
+          </p>
+        )}
 
         {/* Status Update Buttons */}
         <div className="flex gap-2">

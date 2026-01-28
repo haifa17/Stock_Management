@@ -1,4 +1,4 @@
-import { InventoryStatus, ProductType } from "@/lib/types";
+import { InventoryStatus, ProductType } from "@/lib/airtable/airtable-types";
 
 export interface FormData {
   name: string;

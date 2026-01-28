@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { InventoryItem, InventoryStatus } from '../types'
+import { InventoryItem } from '../types'
+import { InventoryStatus } from '../airtable/airtable-types'
 
 type FilterOption = "all" | InventoryStatus
 

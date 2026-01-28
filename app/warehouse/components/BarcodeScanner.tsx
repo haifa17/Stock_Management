@@ -1,33 +1,36 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+interface BarcodeScannerProps {
+  onScan?: (code: string) => void;
+}
 
-export function BarcodeScanner() {
-  const [scannedCode, setScannedCode] = useState("")
-  const [isScanning, setIsScanning] = useState(false)
-  const [error, setError] = useState("")
-  const [isMounted, setIsMounted] = useState(false)
-  const scannerRef = useRef<any>(null)
-  const isRunningRef = useRef(false)
+export function BarcodeScanner({ onScan }: BarcodeScannerProps) {
+  const [scannedCode, setScannedCode] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
+  const [error, setError] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+  const scannerRef = useRef<any>(null);
+  const isRunningRef = useRef(false);
 
   useEffect(() => {
-    setIsMounted(true)
-  }, [])
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (!isScanning || !isMounted) return
+    if (!isScanning || !isMounted) return;
 
-    let isCancelled = false
+    let isCancelled = false;
 
     const startScanner = async () => {
       try {
-        const { Html5Qrcode } = await import("html5-qrcode")
-        
-        if (isCancelled) return
+        const { Html5Qrcode } = await import("html5-qrcode");
 
-        const scanner = new Html5Qrcode("qr-reader")
-        scannerRef.current = scanner
+        if (isCancelled) return;
+
+        const scanner = new Html5Qrcode("qr-reader");
+        scannerRef.current = scanner;
 
         await scanner.start(
           { facingMode: "environment" },
@@ -36,48 +39,49 @@ export function BarcodeScanner() {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
-            setScannedCode(decodedText)
-            isRunningRef.current = false
-            scanner.stop().catch(() => {})
-            setIsScanning(false)
+            setScannedCode(decodedText);
+            onScan?.(decodedText);
+            isRunningRef.current = false;
+            scanner.stop().catch(() => {});
+            setIsScanning(false);
           },
           () => {
             // Normal scanning errors - ignore
-          }
-        )
-        
-        isRunningRef.current = true
-      } catch (err) {
-        console.error(err)
-        setError("Impossible d'accéder à la caméra")
-        setIsScanning(false)
-        isRunningRef.current = false
-      }
-    }
+          },
+        );
 
-    const timeout = setTimeout(startScanner, 100)
+        isRunningRef.current = true;
+      } catch (err) {
+        console.error(err);
+        setError("Impossible d'accéder à la caméra");
+        setIsScanning(false);
+        isRunningRef.current = false;
+      }
+    };
+
+    const timeout = setTimeout(startScanner, 100);
 
     return () => {
-      isCancelled = true
-      clearTimeout(timeout)
-      
+      isCancelled = true;
+      clearTimeout(timeout);
+
       if (scannerRef.current && isRunningRef.current) {
-        scannerRef.current.stop().catch(() => {})
-        isRunningRef.current = false
+        scannerRef.current.stop().catch(() => {});
+        isRunningRef.current = false;
       }
-    }
-  }, [isScanning, isMounted])
+    };
+  }, [isScanning, isMounted]);
 
   const handleStopScanning = () => {
     if (scannerRef.current && isRunningRef.current) {
-      scannerRef.current.stop().catch(() => {})
-      isRunningRef.current = false
+      scannerRef.current.stop().catch(() => {});
+      isRunningRef.current = false;
     }
-    setIsScanning(false)
-  }
+    setIsScanning(false);
+  };
 
   if (!isMounted) {
-    return null
+    return null;
   }
 
   return (
@@ -85,8 +89,8 @@ export function BarcodeScanner() {
       {!isScanning ? (
         <Button
           onClick={() => {
-            setError("")
-            setIsScanning(true)
+            setError("");
+            setIsScanning(true);
           }}
           className="w-full"
           variant="secondary"
@@ -109,9 +113,7 @@ export function BarcodeScanner() {
         </>
       )}
 
-      {error && (
-        <p className="text-sm text-red-600 text-center">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
       {scannedCode && (
         <p className="text-sm text-muted-foreground text-center">
@@ -120,5 +122,5 @@ export function BarcodeScanner() {
         </p>
       )}
     </div>
-  )
+  );
 }

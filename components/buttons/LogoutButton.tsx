@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "../ui/button";
 import { LogOut } from "lucide-react";
 
@@ -28,14 +27,12 @@ const LogoutButton = () => {
 
   return (
     <Button
-      variant="outline"
       size="sm"
-      className="cursor-pointer"
+      className="cursor-pointer "
       onClick={handleLogout}
       disabled={isLoading}
     >
-      <LogOut size={15} />       {isLoading ? "Logout..." : "Logout"}
-
+      <LogOut size={15} />
     </Button>
   );
 };

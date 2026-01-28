@@ -1,5 +1,6 @@
+import { Order } from "../types";
 import { airtable, TABLES } from "./config";
-import type { AirtableOrderFields, Order, OrderStatus } from "./types";
+import type { AirtableOrderFields, OrderStatus } from "./airtable-types";
 
 // Transformer un enregistrement Airtable en Order
 function transformOrderRecord(record: any): Order {

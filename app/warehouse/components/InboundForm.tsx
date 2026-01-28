@@ -1,0 +1,398 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { toast } from "react-toastify";
+import { AlertTriangle } from "lucide-react";
+import { Product } from "@/lib/types";
+
+interface InboundFormProps {
+  scannedProduct?: string;
+  products?: Product[];
+}
+
+export function InboundForm({ scannedProduct, products }: InboundFormProps) {
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const selectedProduct =
+    products?.find((p) => p.id === selectedProductId) || null;
+
+  const [isEmergencyProduct, setIsEmergencyProduct] = useState(false);
+  const [emergencyProductData, setEmergencyProductData] = useState({
+    name: "",
+    category: "",
+  });
+  const [formData, setFormData] = useState({
+    provider: "",
+    grade: "",
+    brand: "",
+    origin: "",
+    condition: "",
+    productionDate: "",
+    qtyReceived: "",
+    notes: "",
+  });
+  const [lotId, setLotId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      const timestamp = Date.now();
+      setLotId(`${selectedProduct.name}-${timestamp}`);
+    }
+  }, [selectedProduct]);
+
+  // Handle scanned product
+  useEffect(() => {
+    if (scannedProduct) {
+      const foundProduct = products?.find((p) => p.name === scannedProduct);
+      console.log("productExists", foundProduct);
+      if (foundProduct) {
+        setSelectedProductId(foundProduct.id);
+        setIsEmergencyProduct(false);
+        toast.success(`Product "${scannedProduct}" selected!`);
+      } else {
+        // Product NOT found - trigger emergency mode
+        setIsEmergencyProduct(true);
+        setSelectedProductId("");
+        setEmergencyProductData({ name: scannedProduct, category: "" });
+        toast.warning(
+          `Product "${scannedProduct}" not found. Creating emergency product...`,
+        );
+      }
+    }
+  }, [scannedProduct, products]);
+
+  // Manual trigger for emergency product
+  const handleEmergencyMode = () => {
+    setIsEmergencyProduct(true);
+    setSelectedProductId("");
+    setEmergencyProductData({ name: "", category: "" });
+    toast.info("Emergency product mode activated");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      let productToUse = selectedProduct?.name;
+      console.log("selectedProduct", selectedProduct);
+      // If emergency product, create it first
+      if (isEmergencyProduct) {
+        const emergencyRes = await fetch("/api/products/emergency", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: emergencyProductData.name,
+            category: emergencyProductData.category,
+            alertAdmin: true, // Trigger admin notification
+          }),
+        });
+
+        if (!emergencyRes.ok) {
+          const errorData = await emergencyRes.json();
+          console.error("Emergency product error:", errorData);
+          toast.error(errorData.error || "Failed to create emergency product");
+          setIsSubmitting(false);
+          return;
+        }
+        const emergencyData = await emergencyRes.json();
+        productToUse = emergencyData.name;
+        // toast.info("Admin has been alerted about this new product");
+      }
+      const currentLotId = lotId || `${productToUse}-${Date.now()}`;
+      // Continue with inbound creation
+      const payload = {
+        product: productToUse,
+        lotId: currentLotId,
+        provider: formData.provider,
+        grade: formData.grade,
+        brand: formData.brand,
+        origin: formData.origin,
+        condition: formData.condition,
+        productionDate: formData.productionDate,
+        qtyReceived: parseFloat(formData.qtyReceived),
+        notes: formData.notes,
+      };
+      console.log("Submitting inbound payload:", payload);
+
+      const res = await fetch("/api/inventory/inbound", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const responseData = await res.json();
+      console.log("Inbound response:", responseData);
+      if (res.ok) {
+        setSubmitted(true);
+        toast.success("Arrival confirmed! Marketer notified via WhatsApp.");
+        setTimeout(() => {
+          setSubmitted(false);
+          setSelectedProductId("");
+          setIsEmergencyProduct(false);
+          setEmergencyProductData({ name: "", category: "" });
+          setFormData({
+            provider: "",
+            grade: "",
+            brand: "",
+            origin: "",
+            condition: "",
+            productionDate: "",
+            qtyReceived: "",
+            notes: "",
+          });
+          setLotId("");
+        }, 2000);
+      } else {
+        toast.error(responseData.error || "Failed to confirm arrival");
+        console.error("API Error:", responseData);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Connection error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-lg font-medium text-green-600">Arrival Confirmed!</p>
+        <p className="text-sm text-muted-foreground">Lot ID: {lotId}</p>
+      </div>
+    );
+  }
+
+  const productOptions = products!.map((p) => ({
+    value: p.id,
+    label: p.name,
+  }));
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {/* Emergency Product Alert */}
+      {isEmergencyProduct && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+          <p className="text-sm text-amber-800 font-medium">
+            ⚠️ Emergency Product Creation
+          </p>
+          {/* <p className="text-xs text-amber-600 mt-1">
+            Admin will be notified about this new product
+          </p> */}
+        </div>
+      )}
+
+      {/* Product Selection OR Emergency Product Fields */}
+      {!isEmergencyProduct ? (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="product">Product Name</Label>
+            <CustomSelect
+              id="product"
+              value={selectedProductId}
+              options={productOptions}
+              onChange={(value) => setSelectedProductId(value)}
+            />
+            {selectedProductId === "" && (
+              <p className="text-sm text-muted-foreground">
+                Can't find the product? Use the emergency button below.
+              </p>
+            )}
+          </div>
+
+          {/* Manual Emergency Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleEmergencyMode}
+            disabled={isSubmitting}
+            className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Create Emergency Product
+          </Button>
+        </>
+      ) : (
+        <div className="grid grid-cols-3 gap-2 items-center">
+          <div className="space-y-2">
+            <Label htmlFor="emergencyName">Product Name</Label>
+            <Input
+              id="emergencyName"
+              placeholder="Enter new product name"
+              value={emergencyProductData.name}
+              onChange={(e) =>
+                setEmergencyProductData({
+                  ...emergencyProductData,
+                  name: e.target.value,
+                })
+              }
+              required
+              disabled={isSubmitting}
+              className="border-amber-300 bg-amber-50"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="emergencyCategory">Category</Label>
+            <Input
+              id="emergencyCategory"
+              placeholder="e.g., Beef, Chicken, Pork"
+              value={emergencyProductData.category}
+              onChange={(e) =>
+                setEmergencyProductData({
+                  ...emergencyProductData,
+                  category: e.target.value,
+                })
+              }
+              required
+              disabled={isSubmitting}
+              className="border-amber-300 bg-amber-50"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setIsEmergencyProduct(false);
+              setEmergencyProductData({ name: "", category: "" });
+            }}
+            disabled={isSubmitting}
+            className="mt-5"
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
+
+      {/* Digital Clipboard Fields */}
+      <div className="space-y-2">
+        <Label htmlFor="provider">Provider</Label>
+        <Input
+          id="provider"
+          placeholder="Provider name"
+          value={formData.provider}
+          onChange={(e) =>
+            setFormData({ ...formData, provider: e.target.value })
+          }
+          required
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="grade">Grade</Label>
+        <Input
+          id="grade"
+          placeholder="e.g. Premium, Standard"
+          value={formData.grade}
+          onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+          required
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="brand">Brand</Label>
+        <Input
+          id="brand"
+          placeholder="Brand name"
+          value={formData.brand}
+          onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+          required
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="origin">Origin</Label>
+        <Input
+          id="origin"
+          placeholder="Country/Region of origin"
+          value={formData.origin}
+          onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+          required
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="condition">Condition</Label>
+        <Input
+          id="condition"
+          placeholder="Product condition"
+          value={formData.condition}
+          onChange={(e) =>
+            setFormData({ ...formData, condition: e.target.value })
+          }
+          required
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* Production Date */}
+      <div className="space-y-2">
+        <Label htmlFor="productionDate">Production Date</Label>
+        <Input
+          id="productionDate"
+          type="date"
+          value={formData.productionDate}
+          onChange={(e) =>
+            setFormData({ ...formData, productionDate: e.target.value })
+          }
+          required
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* Quantity Received (Big Pad) */}
+      <div className="space-y-2">
+        <Label htmlFor="qtyReceived">Qty Received (kg)</Label>
+        <Input
+          id="qtyReceived"
+          type="number"
+          step="0.1"
+          placeholder="0.0"
+          value={formData.qtyReceived}
+          onChange={(e) =>
+            setFormData({ ...formData, qtyReceived: e.target.value })
+          }
+          required
+          disabled={isSubmitting}
+          className="text-2xl py-6" // "Big Pad" styling
+        />
+      </div>
+
+      {/* Voice Memo */}
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes (optional)</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          disabled={isSubmitting}
+          placeholder="Add any notes about this batch..."
+        />
+      </div>
+
+      {/* Lot ID */}
+      <div className="space-y-2">
+        <Label>Lot ID (Auto-generated)</Label>
+        <Input value={lotId} disabled className="bg-muted" />
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full cursor-pointer mt-5"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Confirming..." : "Confirm Arrival"}
+      </Button>
+    </form>
+  );
+}

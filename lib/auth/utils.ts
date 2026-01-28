@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
-import { UserRole } from "../airtable/types";
+import { UserRole } from "../airtable/airtable-types";
 
 const SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key-change-in-production",

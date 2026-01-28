@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Order, OrderStatus } from "@/lib/types";
+import { Order } from "@/lib/types";
 import { toast } from "react-toastify";
+import { OrderStatus } from "@/lib/airtable/airtable-types";
 
 interface OrdersListProps {
   initialOrders: Order[];
