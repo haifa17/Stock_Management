@@ -1,3 +1,5 @@
+//api/inventory/outbound
+
 import { lotService } from "@/lib/airtable/lot-service";
 import { saleService } from "@/lib/airtable/sale-service";
 import { NextResponse } from "next/server";

@@ -19,7 +19,7 @@ export interface AirtableProductFields {
   [key: string]: any;
   Name: string; // "Brisket Flat"
   Category: ProductCategory; // "Beef"
-  Type: ProductType; // "primal"
+  Type: string; // "primal"
   IsEmergency?: boolean; // true if created via emergency mode
   CreatedAt: string;
   CreatedBy?: string; // User ID who created it
@@ -68,9 +68,8 @@ export interface AirtableInventoryFields {
   [key: string]: any;
   Name: string;
   LotId: string;
-  Type: ProductType;
+  Type: string;
   Quantity: number;
-  Weight: number;
   Status: InventoryStatus;
   ArrivalDate: string;
   ExpiryDate: string;

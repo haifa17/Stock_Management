@@ -3,39 +3,66 @@ import { Button } from "@/components/ui/button";
 import { DashboardStats } from "./components/DashboardStats";
 import { StockByType } from "./components/StockByType";
 import { LowStockAlert } from "./components/LowStockAlert";
-import { OrdersList } from "./components/OrdersList";
 import { calculateDashboardData } from "./utils";
 import LogoutButton from "@/components/buttons/LogoutButton";
-import { ordersService } from "@/lib/airtable/orders-service";
+import { RecentActivity } from "./components/RecentActivity";
 
 export const revalidate = 0; // Données en temps réel
 
 export default async function DashboardPage() {
-  const [dashboardData, orders] = await Promise.all([
+  const [dashboardData] = await Promise.all([
     calculateDashboardData(),
-    ordersService.getRecent(5),
+    // ordersService.getRecent(5),
   ]);
 
   return (
     <main className="min-h-screen bg-muted p-4">
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="max-w-3xl mx-auto space-y-4">
+        <div className="flex justify-end">
+          <LogoutButton />
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-
-          <LogoutButton />
+          <h1 className="text-2xl font-bold text-foreground">
+            Admin Dashboard
+          </h1>
+          {/* Navigation */}
+          <div className="flex gap-2">
+            <Link href="/inventory">
+              <Button variant="outline" className=" cursor-pointer" size="sm">
+                Inventory
+              </Button>
+            </Link>
+            <Link href="/sales">
+              <Button className=" cursor-pointer" variant="outline" size="sm">
+                Sales
+              </Button>
+            </Link>
+            <Link href="/warehouse">
+              <Button variant="outline" className=" cursor-pointer" size="sm">
+                Warehouse
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats Grid */}
         <DashboardStats
           totalWeight={dashboardData.totalWeight}
           availableWeight={dashboardData.availableWeight}
-          totalItems={dashboardData.totalItems}
           lowStockCount={dashboardData.lowStockCount}
+          totalInboundToday={dashboardData.totalInboundToday}
+          totalOutboundToday={dashboardData.totalOutboundToday}
+          stockTurnover={dashboardData.stockTurnover}
         />
 
-        {/* Stock by Type */}
-        <StockByType stockByType={dashboardData.stockByType} />
+        {/* Stock by Type
+        <StockByType stockByType={dashboardData.stockByType} /> */}
+        {/* Recent Activity - NEW */}
+        <RecentActivity
+          recentInbound={dashboardData.recentInbound}
+          recentOutbound={dashboardData.recentOutbound}
+        />
 
         {/* Low Stock Alert */}
         {dashboardData.lowStockItems.length > 0 && (
@@ -43,27 +70,7 @@ export default async function DashboardPage() {
         )}
 
         {/* Orders */}
-        <OrdersList initialOrders={orders} />
-
-        {/* Navigation */}
-        <div className="flex gap-2">
-          <Link href="/inventory" className="flex-1">
-            <Button
-              variant="outline"
-              className="w-full bg-transparent cursor-pointer"
-            >
-              Inventory
-            </Button>
-          </Link>
-          <Link href="/warehouse" className="flex-1">
-            <Button
-              variant="outline"
-              className="w-full bg-transparent cursor-pointer"
-            >
-              Warehouse
-            </Button>
-          </Link>
-        </div>
+        {/* <OrdersList initialOrders={orders} /> */}
       </div>
     </main>
   );

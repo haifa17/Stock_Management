@@ -11,13 +11,12 @@ function transformLotToInventoryItem(record: any): any {
   if (batchStatus === "Active" && fields.CurrentStock < 20) {
     status = "Low Stock";
   }
+
   return {
     id: record.id,
     lotId: fields.LotId,
     name: fields.Product,
-    type: "primal", // You can determine this from product if needed
-    quantity: Math.round(fields.CurrentStock), // Convert kg to pieces if needed
-    weight: Number(fields.CurrentStock) || 0,
+    quantity: Number(fields.CurrentStock),
     status,
     arrivalDate: fields.ArrivalDate
       ? new Date(fields.ArrivalDate).toLocaleDateString()

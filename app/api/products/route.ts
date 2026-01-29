@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const newProduct = await productService.create({
       name: data.name,
       category: data.category,
-      type: data.type || "primal",
+      type: data.type ,
       isEmergency: false,
       createdBy: data.createdBy, // Optional: pass user ID
     });

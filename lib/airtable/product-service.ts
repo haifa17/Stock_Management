@@ -3,7 +3,6 @@ import { airtable, TABLES } from "./config";
 import {
   AirtableProductFields,
   ProductCategory,
-  ProductType,
 } from "./airtable-types";
 
 function transformProductRecord(record: any): Product {
@@ -55,7 +54,7 @@ export const productService = {
   async create(data: {
     name: string;
     category: ProductCategory;
-    type?: ProductType;
+    type?: string;
     isEmergency?: boolean;
     createdBy?: string;
   }): Promise<Product> {
@@ -63,7 +62,7 @@ export const productService = {
       const record = await airtable(TABLES.PRODUCTS).create({
         Name: data.name,
         Category: data.category,
-        Type: data.type || "primal",
+        Type: data.type || "N/D",
         IsEmergency: data.isEmergency || false,
         CreatedAt: new Date().toISOString(),
         CreatedBy: data.createdBy,
@@ -96,7 +95,7 @@ export const productService = {
   async update(id: string, data: Partial<{
     name: string;
     category: ProductCategory;
-    type: ProductType;
+    type: string;
     isEmergency: boolean;
   }>): Promise<Product> {
     try {

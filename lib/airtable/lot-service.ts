@@ -14,8 +14,8 @@ function transformLotRecord(record: any): Lot {
     origin: fields.Origin,
     condition: fields.Condition,
     productionDate: fields.ProductionDate,
-    qtyReceived: Number(fields.QtyReceived) || 0,
-    currentStock: Number(fields.CurrentStock) || 0,
+    qtyReceived: fields.QtyReceived || 0,
+    currentStock: fields.CurrentStock || 0,
     status: fields.Status,
     notes: fields.Notes,
     arrivalDate: fields.ArrivalDate,
@@ -39,7 +39,6 @@ export const lotService = {
         Condition: data.condition,
         ProductionDate: data.productionDate,
         QtyReceived: data.qtyReceived,
-        // CurrentStock: data.qtyReceived, // Initially same as QtyReceived
         Status: data.status || "Active",
         Notes: data.notes,
         ArrivalDate: new Date().toISOString(),

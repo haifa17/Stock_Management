@@ -5,14 +5,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboardIcon, PlusCircle } from "lucide-react";
 
-export const revalidate = 0;
+export const revalidate = 0; // ✅ Disable cache
+export const dynamic = "force-dynamic"; // ✅ Force dynamic rendering
 
 export default async function SalesPage() {
   const salesWithProducts = await saleService.getAllWithProductInfo();
 
   return (
     <main className="min-h-screen bg-muted p-4">
-      <div className="max-w-md lg:max-w-2xl mx-auto space-y-8">
+      <div className="max-w-3xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex justify-end">
           {" "}

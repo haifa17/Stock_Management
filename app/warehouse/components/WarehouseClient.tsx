@@ -25,12 +25,11 @@ export default function WarehouseClient({
   const [activeTab, setActiveTab] = useState<"inbound" | "outbound">(
     initialTab,
   );
-
   const [scannedCode, setScannedCode] = useState("");
 
   return (
     <main className="min-h-screen bg-muted p-4">
-      <div className="max-w-md lg:max-w-2xl mx-auto space-y-4">
+      <div className="max-w-3xl mx-auto space-y-4">
         <div className="flex justify-end">
           <LogoutButton />
         </div>

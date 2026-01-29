@@ -8,21 +8,30 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { toast } from "react-toastify";
 import { Textarea } from "@/components/ui/textarea";
 import { Lot } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 interface OutboundFormProps {
   scannedBatch?: string;
-  batches:Lot[]
+  batches: Lot[];
 }
 
-export function OutboundForm({ scannedBatch,batches }: OutboundFormProps) {
-  const [selectedBatch, setSelectedBatch] = useState<any>(null);
+export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
+  const router = useRouter();
+  const [selectedBatch, setSelectedBatch] = useState<Lot | null>(null);
   const [weightOut, setWeightOut] = useState("");
   const [pieces, setPieces] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  
+  // Set default selected batch on mount
+  useEffect(() => {
+    if (batches.length > 0 && !selectedBatch && !scannedBatch) {
+      setSelectedBatch(batches[0]);
+    }
+  }, [batches, selectedBatch, scannedBatch]);
 
-
+  // Handle scanned batch
   useEffect(() => {
     if (scannedBatch) {
       const batch = batches.find((b) => b.lotId === scannedBatch);
@@ -46,7 +55,7 @@ export function OutboundForm({ scannedBatch,batches }: OutboundFormProps) {
     try {
       const payload = {
         batchId: selectedBatch.lotId,
-        weightOut: parseFloat(weightOut),
+        weightOut: Number(weightOut),
         pieces: parseInt(pieces),
         notes,
       };
@@ -61,6 +70,7 @@ export function OutboundForm({ scannedBatch,batches }: OutboundFormProps) {
       if (res.ok) {
         setSubmitted(true);
         toast.success("Order completed! Stock automatically updated.");
+        router.refresh();
         setTimeout(() => {
           setSubmitted(false);
           setSelectedBatch(null);
@@ -106,11 +116,13 @@ export function OutboundForm({ scannedBatch,batches }: OutboundFormProps) {
         <Label htmlFor="batch">Lot/Batch</Label>
         <CustomSelect
           id="batch"
-          value={selectedBatch?.lotId || ""}
+          value={selectedBatch ? selectedBatch.lotId : ""}
           options={batchOptions}
           onChange={(value) => {
-            const batch = batches.find((b) => b.lotId.trim() === value.trim());
-            setSelectedBatch(batch);
+            const batch = batches.find((b) => b.lotId === value);
+            if (batch) {
+              setSelectedBatch(batch);
+            }
           }}
         />
         {selectedBatch && (

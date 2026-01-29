@@ -9,6 +9,7 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { toast } from "react-toastify";
 import { AlertTriangle } from "lucide-react";
 import { Product } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 interface InboundFormProps {
   scannedProduct?: string;
@@ -16,6 +17,7 @@ interface InboundFormProps {
 }
 
 export function InboundForm({ scannedProduct, products }: InboundFormProps) {
+  const router = useRouter();
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const selectedProduct =
     products?.find((p) => p.id === selectedProductId) || null;
@@ -24,6 +26,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   const [emergencyProductData, setEmergencyProductData] = useState({
     name: "",
     category: "",
+    type: "",
   });
   const [formData, setFormData] = useState({
     provider: "",
@@ -50,7 +53,6 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   useEffect(() => {
     if (scannedProduct) {
       const foundProduct = products?.find((p) => p.name === scannedProduct);
-      console.log("productExists", foundProduct);
       if (foundProduct) {
         setSelectedProductId(foundProduct.id);
         setIsEmergencyProduct(false);
@@ -59,7 +61,11 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
         // Product NOT found - trigger emergency mode
         setIsEmergencyProduct(true);
         setSelectedProductId("");
-        setEmergencyProductData({ name: scannedProduct, category: "" });
+        setEmergencyProductData({
+          name: scannedProduct,
+          category: "",
+          type: "",
+        });
         toast.warning(
           `Product "${scannedProduct}" not found. Creating emergency product...`,
         );
@@ -71,8 +77,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   const handleEmergencyMode = () => {
     setIsEmergencyProduct(true);
     setSelectedProductId("");
-    setEmergencyProductData({ name: "", category: "" });
-    toast.info("Emergency product mode activated");
+    setEmergencyProductData({ name: "", category: "", type: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,7 +86,6 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
 
     try {
       let productToUse = selectedProduct?.name;
-      console.log("selectedProduct", selectedProduct);
       // If emergency product, create it first
       if (isEmergencyProduct) {
         const emergencyRes = await fetch("/api/products/emergency", {
@@ -90,6 +94,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           body: JSON.stringify({
             name: emergencyProductData.name,
             category: emergencyProductData.category,
+            type: emergencyProductData.type,
             alertAdmin: true, // Trigger admin notification
           }),
         });
@@ -116,7 +121,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
         origin: formData.origin,
         condition: formData.condition,
         productionDate: formData.productionDate,
-        qtyReceived: parseFloat(formData.qtyReceived),
+        qtyReceived: Number(formData.qtyReceived),
         notes: formData.notes,
       };
       console.log("Submitting inbound payload:", payload);
@@ -130,12 +135,13 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
       console.log("Inbound response:", responseData);
       if (res.ok) {
         setSubmitted(true);
-        toast.success("Arrival confirmed! Marketer notified via WhatsApp.");
+        toast.success("Arrival confirmed!");
+        router.refresh();
         setTimeout(() => {
           setSubmitted(false);
           setSelectedProductId("");
           setIsEmergencyProduct(false);
-          setEmergencyProductData({ name: "", category: "" });
+          setEmergencyProductData({ name: "", category: "", type: "" });
           setFormData({
             provider: "",
             grade: "",
@@ -219,7 +225,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           </Button>
         </>
       ) : (
-        <div className="grid grid-cols-3 gap-2 items-center">
+        <div className="grid grid-cols-4 gap-2 items-center">
           <div className="space-y-2">
             <Label htmlFor="emergencyName">Product Name</Label>
             <Input
@@ -254,13 +260,30 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
               className="border-amber-300 bg-amber-50"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="emergencyType">Type</Label>
+            <Input
+              id="emergencyType"
+              placeholder="e.g., Cut,Primal"
+              value={emergencyProductData.type}
+              onChange={(e) =>
+                setEmergencyProductData({
+                  ...emergencyProductData,
+                  type: e.target.value,
+                })
+              }
+              required
+              disabled={isSubmitting}
+              className="border-amber-300 bg-amber-50"
+            />
+          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => {
               setIsEmergencyProduct(false);
-              setEmergencyProductData({ name: "", category: "" });
+              setEmergencyProductData({ name: "", category: "", type: "" });
             }}
             disabled={isSubmitting}
             className="mt-5"
@@ -357,7 +380,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           id="qtyReceived"
           type="number"
           step="0.1"
-          placeholder="0.0"
+          placeholder="0"
           value={formData.qtyReceived}
           onChange={(e) =>
             setFormData({ ...formData, qtyReceived: e.target.value })

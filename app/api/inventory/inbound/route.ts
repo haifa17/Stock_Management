@@ -1,3 +1,4 @@
+//api/inventory/inbound
 import { lotService } from "@/lib/airtable/lot-service";
 import { productService } from "@/lib/airtable/product-service";
 import { NextResponse } from "next/server";
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
       origin: data.origin,
       condition: data.condition,
       productionDate: data.productionDate,
-      qtyReceived: parseFloat(data.qtyReceived),
+      qtyReceived: data.qtyReceived,
       status: "Active",
       notes: data.notes || data.voiceMemo || "",
       createdBy: data.createdBy, // Optional: user ID

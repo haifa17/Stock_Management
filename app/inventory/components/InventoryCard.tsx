@@ -10,7 +10,6 @@ import { toast } from "react-toastify";
 import { InventoryStatus } from "@/lib/airtable/airtable-types";
 import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
 
-
 interface InventoryCardProps {
   item: InventoryItem;
 }
@@ -42,7 +41,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
       setIsUpdating(false);
     }
   };
-
+  console.log("item",item)
   return (
     <Card>
       <CardContent className="p-4">
@@ -82,20 +81,12 @@ export function InventoryCard({ item }: InventoryCardProps) {
 
         <div className="grid grid-cols-3 gap-2 text-sm mb-3">
           <div>
-            <p className="text-muted-foreground">Type</p>
-            <p className="font-medium capitalize text-foreground">
-              {item.type}
-            </p>
-          </div>
-          <div>
             <p className="text-muted-foreground">Current</p>
-            <p className="font-medium text-foreground">{item.weight} kg</p>
+            <p className="font-medium text-foreground">{item.quantity} kg</p>
           </div>
           <div>
             <p className="text-muted-foreground">Received</p>
-            <p className="font-medium text-foreground">
-              {item.qtyReceived || item.weight} kg
-            </p>
+            <p className="font-medium text-foreground">{item.qtyReceived} kg</p>
           </div>
         </div>
 

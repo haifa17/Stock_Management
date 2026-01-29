@@ -3,7 +3,6 @@ import {
   InventoryStatus,
   OrderStatus,
   ProductCategory,
-  ProductType,
   UserRole,
 } from "./airtable/airtable-types";
 
@@ -18,13 +17,11 @@ export interface InventoryItem {
   id: string;
   name: string;
   lotId: string;
-  type: ProductType;
+  type: string;
   quantity: number;
-  weight: number;
   status: InventoryStatus;
   arrivalDate: string;
   expiryDate: string;
-  // Additional lot fields
   provider?: string;
   grade?: string;
   brand?: string;
@@ -46,7 +43,7 @@ export interface Product {
   id: string;
   name: string;
   category: ProductCategory;
-  type: ProductType;
+  type: string;
   isEmergency?: boolean;
   createdAt: string;
   createdBy?: string;
