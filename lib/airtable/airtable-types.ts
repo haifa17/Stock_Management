@@ -25,8 +25,6 @@ export interface AirtableProductFields {
   CreatedBy?: string; // User ID who created it
 }
 
-
-
 // ============================================
 // LOTS/BATCHES TABLE (Inbound Records)
 // ============================================
@@ -44,11 +42,10 @@ export interface AirtableLotFields {
   CurrentStock: number; // kg (calculated: QtyReceived - total outbound)
   Status: BatchStatus; // "Active", "Depleted", "Expired"
   Notes?: string;
+  VoiceNoteUrl?: string;
   ArrivalDate: string; // Auto-generated timestamp
   CreatedBy?: string; // User ID
 }
-
-
 
 // ============================================
 // SALES/OUTBOUND TABLE
@@ -60,6 +57,7 @@ export interface AirtableSaleFields {
   WeightOut: number; // kg
   Pieces: number;
   Notes?: string;
+  VoiceNoteUrl?: string;
   SaleDate: string; // Timestamp
   ProcessedBy?: string; // User ID
 }
@@ -84,4 +82,3 @@ export interface AirtableOrderFields {
   TotalWeight: number;
   Status: OrderStatus;
 }
-

@@ -1,58 +1,141 @@
-//api/inventory/inbound
+//api/inventory/inbound/route.ts
 import { lotService } from "@/lib/airtable/lot-service";
 import { productService } from "@/lib/airtable/product-service";
 import { NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
-    console.log("Received inbound data:", data);
+    console.log("=== INBOUND API CALLED ===");
+    
+    const formData = await request.formData();
+    console.log("FormData received");
+
+    // Extract form fields
+    const product = formData.get("product") as string;
+    const lotId = formData.get("lotId") as string;
+    const qtyReceived = parseFloat(formData.get("qtyReceived") as string);
+    const provider = formData.get("provider") as string;
+    const grade = formData.get("grade") as string;
+    const brand = formData.get("brand") as string;
+    const origin = formData.get("origin") as string;
+    const condition = formData.get("condition") as string;
+    const productionDate = formData.get("productionDate") as string;
+    const notes = formData.get("notes") as string;
+    const voiceNote = formData.get("voiceNote") as File | null;
+    const createdBy = formData.get("createdBy") as string;
+
+    console.log("Extracted fields:", {
+      product,
+      lotId,
+      qtyReceived,
+      voiceNoteExists: !!voiceNote,
+      voiceNoteSize: voiceNote?.size,
+    });
+
     // Validate required fields
-    if (!data.product || !data.lotId || !data.qtyReceived) {
+    if (!product || !lotId || !qtyReceived) {
       return NextResponse.json(
         { error: "Product, lotId, and qtyReceived are required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     // Verify product exists
-    const product = await productService.getByName(data.product);
-    if (!product) {
-      console.error("Product not found:", data.product);
+    const productRecord = await productService.getByName(product);
+    if (!productRecord) {
+      console.error("Product not found:", product);
       return NextResponse.json(
         {
-          error: `Product "${data.product}" not found. Please create the product first.`,
+          error: `Product "${product}" not found. Please create the product first.`,
         },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
+    let voiceNoteUrl = null;
+
+    // Upload voice note to Cloudinary if present
+    if (voiceNote && voiceNote.size > 0) {
+      console.log("Voice note detected, starting upload...");
+      
+      try {
+        // Check Cloudinary config
+        console.log("Cloudinary config:", {
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? "✓ Set" : "✗ Missing",
+          api_key: process.env.CLOUDINARY_API_KEY ? "✓ Set" : "✗ Missing",
+          api_secret: process.env.CLOUDINARY_API_SECRET ? "✓ Set" : "✗ Missing",
+        });
+
+        const bytes = await voiceNote.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const base64Audio = buffer.toString("base64");
+        const dataURI = `data:${voiceNote.type};base64,${base64Audio}`;
+
+        console.log("Audio prepared for upload, size:", buffer.length, "bytes");
+
+        const uploadResponse = await cloudinary.uploader.upload(dataURI, {
+          resource_type: "video", // Audio files use "video" resource type
+          folder: "voice-notes/inbound",
+          public_id: `inbound-${lotId}-${Date.now()}`,
+          format: "webm",
+        });
+
+        voiceNoteUrl = uploadResponse.secure_url;
+        console.log("✓ Voice note uploaded successfully:", voiceNoteUrl);
+      } catch (uploadError) {
+        console.error("✗ Error uploading voice note:", uploadError);
+        // Continue without voice note rather than failing the entire request
+      }
+    } else {
+      console.log("No voice note in request");
+    }
+
+    console.log("Creating lot with voiceNoteUrl:", voiceNoteUrl);
+
     // Create lot/batch record
     const newLot = await lotService.create({
-      lotId: data.lotId,
-      product: data.product,
-      provider: data.provider,
-      grade: data.grade,
-      brand: data.brand,
-      origin: data.origin,
-      condition: data.condition,
-      productionDate: data.productionDate,
-      qtyReceived: data.qtyReceived,
+      lotId: lotId,
+      product: product,
+      provider: provider,
+      grade: grade,
+      brand: brand,
+      origin: origin,
+      condition: condition,
+      productionDate: productionDate,
+      qtyReceived: qtyReceived,
       status: "Active",
-      notes: data.notes || data.voiceMemo || "",
-      createdBy: data.createdBy, // Optional: user ID
+      notes: notes || "",
+      voiceNoteUrl: voiceNoteUrl || undefined,
+      createdBy: createdBy,
     });
+    
     console.log("Lot created successfully:", newLot);
 
     // TODO: Send WhatsApp notification to marketer
     // await sendMarketerNotification(newLot);
 
-    return NextResponse.json(newLot, { status: 201 });
+    return NextResponse.json({
+      ...newLot,
+      voiceNoteUrl: voiceNoteUrl,
+    }, { status: 201 });
   } catch (error) {
+    console.error("=== ERROR IN INBOUND API ===");
     console.error("Error creating inbound batch:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return NextResponse.json(
-      { error: "Failed to create inbound batch" },
-      { status: 500 },
+      { 
+        error: "Failed to create inbound batch",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
     );
   }
 }

@@ -29,6 +29,7 @@ export interface InventoryItem {
   condition?: string;
   qtyReceived?: number;
   notes?: string;
+  voiceNoteUrl?: string;
 }
 
 export interface Order {
@@ -62,6 +63,7 @@ export interface Lot {
   currentStock: number;
   status: BatchStatus;
   notes?: string;
+  voiceNoteUrl?: string;
   arrivalDate: string;
   createdBy?: string;
 }
@@ -72,6 +74,7 @@ export interface Sale {
   weightOut: number;
   pieces: number;
   notes?: string;
+  voiceNoteUrl?: string;
   saleDate: string;
   processedBy?: string;
 }

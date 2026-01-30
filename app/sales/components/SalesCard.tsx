@@ -41,6 +41,19 @@ export function SalesCard({ sale }: SalesCardProps) {
             Note: {sale.notes}
           </p>
         )}
+        {sale.voiceNoteUrl && (
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-xs text-muted-foreground mb-2">Voice Note:</p>
+            <audio
+              controls
+              src={sale.voiceNoteUrl}
+              className="w-full h-8"
+              preload="metadata"
+            >
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

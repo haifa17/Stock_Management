@@ -8,4 +8,5 @@ export interface SaleWithProduct {
   notes?: string;
   saleDate: string;
   processedBy?: string;
+  voiceNoteUrl?:string
 }

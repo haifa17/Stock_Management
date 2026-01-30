@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { AlertTriangle } from "lucide-react";
 import { Product } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { VoiceRecorder } from "./Voicerecorder";
 
 interface InboundFormProps {
   scannedProduct?: string;
@@ -21,6 +22,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const selectedProduct =
     products?.find((p) => p.id === selectedProductId) || null;
+  const [voiceNote, setVoiceNote] = useState<Blob | null>(null);
 
   const [isEmergencyProduct, setIsEmergencyProduct] = useState(false);
   const [emergencyProductData, setEmergencyProductData] = useState({
@@ -79,7 +81,9 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
     setSelectedProductId("");
     setEmergencyProductData({ name: "", category: "", type: "" });
   };
-
+  const handleVoiceRecording = (blob: Blob) => {
+    setVoiceNote(blob.size > 0 ? blob : null);
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -112,24 +116,40 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
       }
       const currentLotId = lotId || `${productToUse}-${Date.now()}`;
       // Continue with inbound creation
-      const payload = {
-        product: productToUse,
-        lotId: currentLotId,
-        provider: formData.provider,
-        grade: formData.grade,
-        brand: formData.brand,
-        origin: formData.origin,
-        condition: formData.condition,
-        productionDate: formData.productionDate,
-        qtyReceived: Number(formData.qtyReceived),
-        notes: formData.notes,
-      };
-      console.log("Submitting inbound payload:", payload);
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append("product", productToUse!);
+      formDataToSend.append("lotId", currentLotId);
+      formDataToSend.append("provider", formData.provider);
+      formDataToSend.append("grade", formData.grade);
+      formDataToSend.append("brand", formData.brand);
+      formDataToSend.append("origin", formData.origin);
+      formDataToSend.append("condition", formData.condition);
+      formDataToSend.append("productionDate", formData.productionDate);
+      formDataToSend.append("qtyReceived", formData.qtyReceived);
+      formDataToSend.append("notes", formData.notes);
+
+      if (voiceNote) {
+        console.log("Appending voice note to FormData");
+        formDataToSend.append("voiceNote", voiceNote, "voice-note.webm");
+      } else {
+        console.log("No voice note to append");
+      }
+
+      // Log FormData contents
+      console.log("FormData contents:");
+      for (const [key, value] of formDataToSend.entries()) {
+        console.log(
+          `  ${key}:`,
+          value instanceof Blob ? `Blob(${value.size} bytes)` : value,
+        );
+      }
+
+      console.log("Sending request to /api/inventory/inbound");
 
       const res = await fetch("/api/inventory/inbound", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formDataToSend,
       });
       const responseData = await res.json();
       console.log("Inbound response:", responseData);
@@ -152,6 +172,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
             qtyReceived: "",
             notes: "",
           });
+          setVoiceNote(null);
           setLotId("");
         }, 2000);
       } else {
@@ -402,7 +423,14 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           placeholder="Add any notes about this batch..."
         />
       </div>
-
+      {/* Voice Memo (Optional) */}
+      <div className="space-y-2">
+        <Label>Voice Note (optional)</Label>
+        <VoiceRecorder
+          onRecordingComplete={handleVoiceRecording}
+          disabled={isSubmitting}
+        />
+      </div>
       {/* Lot ID */}
       <div className="space-y-2">
         <Label>Lot ID (Auto-generated)</Label>

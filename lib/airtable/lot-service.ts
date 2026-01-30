@@ -18,6 +18,7 @@ function transformLotRecord(record: any): Lot {
     currentStock: fields.CurrentStock || 0,
     status: fields.Status,
     notes: fields.Notes,
+    voiceNoteUrl: fields.VoiceNoteUrl,
     arrivalDate: fields.ArrivalDate,
     createdBy: fields.CreatedBy,
   };
@@ -29,7 +30,7 @@ export const lotService = {
     data: Omit<Lot, "id" | "arrivalDate" | "currentStock">,
   ): Promise<Lot> {
     try {
-      const record = await airtable(TABLES.LOTS).create({
+      const recordData: any = {
         LotId: data.lotId,
         Product: data.product,
         Provider: data.provider,
@@ -40,10 +41,27 @@ export const lotService = {
         ProductionDate: data.productionDate,
         QtyReceived: data.qtyReceived,
         Status: data.status || "Active",
-        Notes: data.notes,
         ArrivalDate: new Date().toISOString(),
-        CreatedBy: data.createdBy,
-      } as AirtableLotFields);
+      };
+
+      // Add optional fields only if provided
+      if (data.notes) {
+        recordData.Notes = data.notes;
+      }
+
+      if (data.voiceNoteUrl) {
+        recordData.VoiceNoteUrl = data.voiceNoteUrl; // Add this
+      }
+
+      if (data.createdBy) {
+        recordData.CreatedBy = data.createdBy;
+      }
+
+      console.log("Creating lot record with:", recordData);
+
+      const record = await airtable(TABLES.LOTS).create(
+        recordData as AirtableLotFields,
+      );
       return transformLotRecord(record);
     } catch (error) {
       console.error("Error creating lot:", error);
@@ -52,7 +70,7 @@ export const lotService = {
   },
 
   // Get all active batches
-   async getActiveBatches(): Promise<Lot[]> {
+  async getActiveBatches(): Promise<Lot[]> {
     try {
       const records = await airtable(TABLES.LOTS)
         .select({

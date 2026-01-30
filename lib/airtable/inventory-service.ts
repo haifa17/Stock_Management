@@ -32,6 +32,7 @@ function transformLotToInventoryItem(record: any): any {
     condition: fields.Condition,
     qtyReceived: fields.QtyReceived,
     notes: fields.Notes,
+    voiceNoteUrl:fields.VoiceNoteUrl
   };
 }
 

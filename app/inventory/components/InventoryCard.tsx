@@ -41,7 +41,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
       setIsUpdating(false);
     }
   };
-  console.log("item",item)
+  console.log("item", item);
   return (
     <Card>
       <CardContent className="p-4">
@@ -113,9 +113,21 @@ export function InventoryCard({ item }: InventoryCardProps) {
             Note: {item.notes}
           </p>
         )}
-
+        {item.voiceNoteUrl && (
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-xs text-muted-foreground mb-2">Voice Note:</p>
+            <audio
+              controls
+              src={item.voiceNoteUrl}
+              className="w-full h-8"
+              preload="metadata"
+            >
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        )}
         {/* Status Update Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-5">
           {STATUS_OPTIONS.map((status) => (
             <Button
               key={status}

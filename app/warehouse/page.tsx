@@ -17,7 +17,6 @@ export default async function WarehousePage({
     lotService.getActiveBatches(),
     productService.getAll(),
   ]);
-  console.log("batchesfrom server component warehouse", batches);
   return (
     <WarehouseClient
       initialTab={initialTab}

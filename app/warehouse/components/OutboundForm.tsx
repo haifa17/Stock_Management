@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import { Textarea } from "@/components/ui/textarea";
 import { Lot } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { VoiceRecorder } from "./Voicerecorder";
 
 interface OutboundFormProps {
   scannedBatch?: string;
@@ -23,7 +24,8 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  
+  const [voiceNote, setVoiceNote] = useState<Blob | null>(null);
+
   // Set default selected batch on mount
   useEffect(() => {
     if (batches.length > 0 && !selectedBatch && !scannedBatch) {
@@ -43,7 +45,9 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
       }
     }
   }, [scannedBatch, batches]);
-
+  const handleVoiceRecording = (blob: Blob) => {
+    setVoiceNote(blob.size > 0 ? blob : null);
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -53,23 +57,43 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
     }
     setIsSubmitting(true);
     try {
-      const payload = {
-        batchId: selectedBatch.lotId,
-        weightOut: Number(weightOut),
-        pieces: parseInt(pieces),
-        notes,
-      };
+      const formData = new FormData();
+      formData.append("batchId", selectedBatch.lotId);
+      formData.append("weightOut", weightOut);
+      formData.append("pieces", pieces);
 
+      if (voiceNote) {
+        formData.append("voiceNote", voiceNote, "voice-note.webm");
+      } else {
+        console.log("No voice note to append");
+      }
+      if (notes) {
+        formData.append("notes", notes);
+      } else {
+        console.log("No voice note to append");
+      }
       const res = await fetch("/api/inventory/outbound", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       const responseData = await res.json();
       console.log("Response data:", responseData);
       if (res.ok) {
         setSubmitted(true);
-        toast.success("Order completed! Stock automatically updated.");
+        toast.success("Order completed!");
+        // Update the selected batch with the new stock from response
+        if (responseData.remainingStock !== undefined) {
+          setSelectedBatch((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  currentStock: responseData.remainingStock,
+                }
+              : null,
+          );
+        }
+
+        // Also refresh the page data
         router.refresh();
         setTimeout(() => {
           setSubmitted(false);
@@ -77,6 +101,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
           setWeightOut("");
           setPieces("");
           setNotes("");
+          setVoiceNote(null);
         }, 2000);
       } else {
         toast.error(responseData.error || "Failed to complete order");
@@ -162,14 +187,21 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
           className="text-2xl py-6" // "Big Pad" styling
         />
       </div>
-
-      {/* Voice Memo (Optional) */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes(optional)</Label>
+        <Label htmlFor="notes">Notes (optional)</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          disabled={isSubmitting}
+          placeholder="Add any notes about this batch..."
+        />
+      </div>
+      {/* Voice Memo (Optional) */}
+      <div className="space-y-2">
+        <Label>Voice Note (optional)</Label>
+        <VoiceRecorder
+          onRecordingComplete={handleVoiceRecording}
           disabled={isSubmitting}
         />
       </div>

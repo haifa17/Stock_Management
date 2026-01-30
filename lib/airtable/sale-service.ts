@@ -11,6 +11,7 @@ function transformSaleRecord(record: any): Sale {
     weightOut: Number(fields.WeightOut) || 0,
     pieces: Number(fields.Pieces) || 0,
     notes: fields.Notes,
+    voiceNoteUrl: fields.VoiceNoteUrl,
     saleDate: fields.SaleDate,
     processedBy: fields.ProcessedBy,
   };
@@ -33,7 +34,9 @@ export const saleService = {
       if (data.notes) {
         recordData.Notes = data.notes;
       }
-
+      if (data.voiceNoteUrl) {
+        recordData.VoiceNoteUrl = data.voiceNoteUrl;
+      }
       if (data.processedBy) {
         recordData.ProcessedBy = data.processedBy;
       }
