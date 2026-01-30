@@ -35,12 +35,12 @@ export default function WarehouseClient({
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex  justify-between">
           <h1 className="text-2xl font-bold text-foreground">
             Warehouse Entry
           </h1>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col md:flex-row items-center gap-2">
             <Link href="/inventory">
               <Button variant="outline" size="sm">
                 View Inventory

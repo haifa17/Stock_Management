@@ -19,10 +19,10 @@ export default async function SalesPage() {
           {" "}
           <LogoutButton />
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex  justify-between">
           <h1 className="text-2xl font-bold text-foreground">Sales History</h1>
           {/* Navigation */}
-          <div className="flex gap-2">
+          <div className="flex flex-col lg:flex-row gap-2">
             <Link href="/warehouse?tab=outbound" className="flex-1">
               <Button
                 variant="outline"

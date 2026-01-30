@@ -408,7 +408,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           }
           required
           disabled={isSubmitting}
-          className="text-2xl py-6" // "Big Pad" styling
+          className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
       </div>
 

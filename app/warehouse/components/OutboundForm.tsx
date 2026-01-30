@@ -171,7 +171,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
           onChange={(e) => setWeightOut(e.target.value)}
           required
           disabled={isSubmitting}
-          className="text-2xl py-6" // "Big Pad" styling
+          className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
       </div>
 
@@ -186,7 +186,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
           onChange={(e) => setPieces(e.target.value)}
           required
           disabled={isSubmitting}
-          className="text-2xl py-6" // "Big Pad" styling
+          className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
       </div>
       <div className="space-y-2">

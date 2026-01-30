@@ -7,7 +7,7 @@ import { inventoryService } from "@/lib/airtable/inventory-service";
 import { LayoutDashboardIcon, PlusCircle } from "lucide-react";
 
 export const revalidate = 0; // Désactiver le cache pour avoir les données en temps réel
-export const dynamic = 'force-dynamic'; 
+export const dynamic = "force-dynamic";
 export default async function InventoryPage() {
   const inventory = await inventoryService.getAll();
 
@@ -18,10 +18,10 @@ export default async function InventoryPage() {
           <LogoutButton />
         </div>
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex  justify-between">
           <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
           {/* Navigation */}
-          <div className="flex gap-2">
+          <div className="flex flex-col lg:flex-row gap-2">
             <Link href="/warehouse?tab=inbound" className="flex-1">
               <Button
                 variant="outline"

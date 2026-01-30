@@ -22,12 +22,17 @@ export default async function DashboardPage() {
           <LogoutButton />
         </div>
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between">
           <h1 className="text-2xl font-bold text-foreground">
             Admin Dashboard
           </h1>
           {/* Navigation */}
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
+            <Link href="/warehouse">
+              <Button variant="outline" className=" cursor-pointer" size="sm">
+                Warehouse
+              </Button>
+            </Link>
             <Link href="/inventory">
               <Button variant="outline" className=" cursor-pointer" size="sm">
                 Inventory
@@ -36,11 +41,6 @@ export default async function DashboardPage() {
             <Link href="/sales">
               <Button className=" cursor-pointer" variant="outline" size="sm">
                 Sales
-              </Button>
-            </Link>
-            <Link href="/warehouse">
-              <Button variant="outline" className=" cursor-pointer" size="sm">
-                Warehouse
               </Button>
             </Link>
           </div>
