@@ -88,6 +88,10 @@ export function InventoryCard({ item }: InventoryCardProps) {
             <p className="text-muted-foreground">Received</p>
             <p className="font-medium text-foreground">{item.qtyReceived} kg</p>
           </div>
+          <div>
+            <p className="text-muted-foreground">Sold</p>
+            <p className="font-medium text-foreground">{item.totalSold} kg</p>
+          </div>
         </div>
 
         {(item.origin || item.condition) && (

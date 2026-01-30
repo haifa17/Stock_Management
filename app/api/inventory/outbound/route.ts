@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
 // Configure Cloudinary
- cloudinary.config({
+cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
@@ -80,16 +80,12 @@ export async function POST(request: Request) {
       notes: notes,
       voiceNoteUrl: voiceNoteUrl || undefined,
     });
-
-    // Update lot stock
-    const newStock = lot.currentStock - weightOut;
-    await lotService.updateStock(batchId, newStock);
+    const updatedLot = await lotService.getByLotId(batchId);
 
     return NextResponse.json(
       {
         sale: newSale,
-        remainingStock: newStock,
-        status: newStock <= 0 ? "Depleted" : "Active",
+        lot: updatedLot,
         voiceNoteUrl: voiceNoteUrl,
       },
       { status: 201 },

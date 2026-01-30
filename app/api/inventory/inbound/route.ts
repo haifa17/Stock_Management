@@ -14,7 +14,7 @@ cloudinary.config({
 export async function POST(request: Request) {
   try {
     console.log("=== INBOUND API CALLED ===");
-    
+
     const formData = await request.formData();
     console.log("FormData received");
 
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     if (!product || !lotId || !qtyReceived) {
       return NextResponse.json(
         { error: "Product, lotId, and qtyReceived are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         {
           error: `Product "${product}" not found. Please create the product first.`,
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     // Upload voice note to Cloudinary if present
     if (voiceNote && voiceNote.size > 0) {
       console.log("Voice note detected, starting upload...");
-      
+
       try {
         // Check Cloudinary config
         console.log("Cloudinary config:", {
@@ -111,31 +111,38 @@ export async function POST(request: Request) {
       condition: condition,
       productionDate: productionDate,
       qtyReceived: qtyReceived,
+      totalSold: 0,
       status: "Active",
       notes: notes || "",
       voiceNoteUrl: voiceNoteUrl || undefined,
       createdBy: createdBy,
     });
-    
+
     console.log("Lot created successfully:", newLot);
 
     // TODO: Send WhatsApp notification to marketer
     // await sendMarketerNotification(newLot);
 
-    return NextResponse.json({
-      ...newLot,
-      voiceNoteUrl: voiceNoteUrl,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        ...newLot,
+        voiceNoteUrl: voiceNoteUrl,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("=== ERROR IN INBOUND API ===");
     console.error("Error creating inbound batch:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
     return NextResponse.json(
-      { 
+      {
         error: "Failed to create inbound batch",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

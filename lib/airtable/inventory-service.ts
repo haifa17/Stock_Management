@@ -6,7 +6,6 @@ function transformLotToInventoryItem(record: any): any {
   const fields = record.fields as AirtableLotFields;
   const batchStatus = fields.Status as BatchStatus;
   let status = mapBatchStatusToInventoryStatus(batchStatus);
-
   // Apply low stock condition
   if (batchStatus === "Active" && fields.CurrentStock < 20) {
     status = "Low Stock";
@@ -16,7 +15,9 @@ function transformLotToInventoryItem(record: any): any {
     id: record.id,
     lotId: fields.LotId,
     name: fields.Product,
-    quantity: Number(fields.CurrentStock),
+    quantity:  Number(fields.CurrentStock || 0),
+    qtyReceived: Number(fields.QtyReceived || 0),
+    totalSold:Number(fields.TotalSold || 0),
     status,
     arrivalDate: fields.ArrivalDate
       ? new Date(fields.ArrivalDate).toLocaleDateString()
@@ -30,7 +31,6 @@ function transformLotToInventoryItem(record: any): any {
     brand: fields.Brand,
     origin: fields.Origin,
     condition: fields.Condition,
-    qtyReceived: fields.QtyReceived,
     notes: fields.Notes,
     voiceNoteUrl:fields.VoiceNoteUrl
   };

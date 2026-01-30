@@ -19,6 +19,7 @@ export interface InventoryItem {
   lotId: string;
   type: string;
   quantity: number;
+  totalSold: number;
   status: InventoryStatus;
   arrivalDate: string;
   expiryDate: string;
@@ -60,6 +61,7 @@ export interface Lot {
   condition: string;
   productionDate: string;
   qtyReceived: number;
+  totalSold: number;
   currentStock: number;
   status: BatchStatus;
   notes?: string;

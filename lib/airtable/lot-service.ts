@@ -16,6 +16,7 @@ function transformLotRecord(record: any): Lot {
     productionDate: fields.ProductionDate,
     qtyReceived: fields.QtyReceived || 0,
     currentStock: fields.CurrentStock || 0,
+    totalSold: fields.TotalSold || 0,
     status: fields.Status,
     notes: fields.Notes,
     voiceNoteUrl: fields.VoiceNoteUrl,
@@ -40,6 +41,7 @@ export const lotService = {
         Condition: data.condition,
         ProductionDate: data.productionDate,
         QtyReceived: data.qtyReceived,
+        TotalSold: data.totalSold ?? 0,
         Status: data.status || "Active",
         ArrivalDate: new Date().toISOString(),
       };
@@ -117,7 +119,11 @@ export const lotService = {
   },
 
   // Update stock and status
-  async updateStock(lotId: string, newStock: number): Promise<void> {
+  async updateStock(
+    lotId: string,
+    totalSold?: number,
+    status?: BatchStatus,
+  ): Promise<void> {
     try {
       const records = await airtable(TABLES.LOTS)
         .select({
@@ -127,17 +133,19 @@ export const lotService = {
         .all();
 
       if (records.length > 0) {
-        // Only update Status, CurrentStock is computed automatically
-        await airtable(TABLES.LOTS).update(records[0].id, {
-          Status: newStock <= 0 ? "Depleted" : "Active",
-        });
+        const updateData: any = {};
+        if (totalSold !== undefined) updateData.TotalSold = totalSold;
+        if (status) updateData.Status = status;
+
+        if (Object.keys(updateData).length > 0) {
+          await airtable(TABLES.LOTS).update(records[0].id, updateData);
+        }
       }
     } catch (error) {
       console.error("Error updating stock:", error);
       throw error;
     }
   },
-
   // Get low stock lots
   async getLowStock(threshold: number = 20): Promise<Lot[]> {
     try {

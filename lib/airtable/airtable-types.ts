@@ -39,6 +39,8 @@ export interface AirtableLotFields {
   Condition: string;
   ProductionDate: string;
   QtyReceived: number; // kg
+  Sales?: string[]; // 🔗 linked records (array of record IDs)
+  TotalSold?: number; // 📊 rollup field
   CurrentStock: number; // kg (calculated: QtyReceived - total outbound)
   Status: BatchStatus; // "Active", "Depleted", "Expired"
   Notes?: string;
@@ -53,8 +55,8 @@ export interface AirtableLotFields {
 export interface AirtableSaleFields {
   [key: string]: any;
   SaleId?: string; // Auto-generated or record ID
-  LotId: string; // Link to Lots table
-  WeightOut: number; // kg
+  LotId: string; // 📝 Text field - stores the custom lot ID string (e.g., "Rabbit987-1769700497858")
+  Lots: string | string[]; // 🔗 Linked record field - links to Lots table (Airtable record ID)  WeightOut: number; // kg
   Pieces: number;
   Notes?: string;
   VoiceNoteUrl?: string;

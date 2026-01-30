@@ -4,10 +4,12 @@ import { AirtableSaleFields } from "./airtable-types";
 
 function transformSaleRecord(record: any): Sale {
   const fields = record.fields as AirtableSaleFields;
+
+  const lotId = fields.LotId || "";
   return {
     id: record.id,
     saleId: fields.SaleId || record.id,
-    lotId: fields.LotId,
+    lotId: lotId, // This is the custom lot ID string from the text field    weightOut: Number(fields.WeightOut) || 0,
     weightOut: Number(fields.WeightOut) || 0,
     pieces: Number(fields.Pieces) || 0,
     notes: fields.Notes,
@@ -21,10 +23,18 @@ export const saleService = {
   async create(data: Omit<Sale, "id" | "saleId" | "saleDate">): Promise<Sale> {
     try {
       console.log("Creating sale with data:", data);
+      const { lotService } = await import("./lot-service");
+      const lot = await lotService.getByLotId(data.lotId);
 
+      if (!lot) {
+        throw new Error(`Lot with ID ${data.lotId} not found`);
+      }
+
+      console.log(`✓ Found lot record with Airtable ID: ${lot.id}`);
       // Build the record data with only required fields
       const recordData: any = {
-        LotId: data.lotId,
+        LotId: data.lotId, // ✅ Text field - the custom lot ID string
+        Lots: [lot.id], // ✅ Linked record - the Airtable record ID
         WeightOut: data.weightOut,
         Pieces: data.pieces,
         SaleDate: new Date().toISOString(),

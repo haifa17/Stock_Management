@@ -45,9 +45,11 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
       }
     }
   }, [scannedBatch, batches]);
+
   const handleVoiceRecording = (blob: Blob) => {
     setVoiceNote(blob.size > 0 ? blob : null);
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -82,15 +84,15 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
         setSubmitted(true);
         toast.success("Order completed!");
         // Update the selected batch with the new stock from response
-        if (responseData.remainingStock !== undefined) {
-          setSelectedBatch((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  currentStock: responseData.remainingStock,
-                }
-              : null,
-          );
+        // 🔹 Fetch the updated lot from Airtable to get computed fields
+        const updatedLotRes = await fetch(
+          `/api/inventory/lots/${selectedBatch.lotId}`,
+        );
+        if (updatedLotRes.ok) {
+          const refreshedLot = await updatedLotRes.json();
+          setSelectedBatch(refreshedLot); // UI now shows real currentStock & totalSold
+        } else {
+          console.warn("Could not fetch updated lot, UI may be out of sync");
         }
 
         // Also refresh the page data
