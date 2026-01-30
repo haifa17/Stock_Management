@@ -41,7 +41,6 @@ export const lotService = {
         Condition: data.condition,
         ProductionDate: data.productionDate,
         QtyReceived: data.qtyReceived,
-        TotalSold: data.totalSold ?? 0,
         Status: data.status || "Active",
         ArrivalDate: new Date().toISOString(),
       };
@@ -134,7 +133,6 @@ export const lotService = {
 
       if (records.length > 0) {
         const updateData: any = {};
-        if (totalSold !== undefined) updateData.TotalSold = totalSold;
         if (status) updateData.Status = status;
 
         if (Object.keys(updateData).length > 0) {

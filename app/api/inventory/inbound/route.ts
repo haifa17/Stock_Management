@@ -111,7 +111,6 @@ export async function POST(request: Request) {
       condition: condition,
       productionDate: productionDate,
       qtyReceived: qtyReceived,
-      totalSold: 0,
       status: "Active",
       notes: notes || "",
       voiceNoteUrl: voiceNoteUrl || undefined,

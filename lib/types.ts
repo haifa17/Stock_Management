@@ -61,7 +61,7 @@ export interface Lot {
   condition: string;
   productionDate: string;
   qtyReceived: number;
-  totalSold: number;
+  totalSold?: number;
   currentStock: number;
   status: BatchStatus;
   notes?: string;
