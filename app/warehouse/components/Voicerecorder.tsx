@@ -10,12 +10,15 @@ interface VoiceRecorderProps {
   disabled?: boolean;
 }
 
-export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderProps) {
+export function VoiceRecorder({
+  onRecordingComplete,
+  disabled,
+}: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -25,32 +28,30 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
-      
+
       const chunks: Blob[] = [];
-      
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunks.push(e.data);
         }
       };
-      
+
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: "audio/webm" });
         setAudioBlob(blob);
         onRecordingComplete(blob);
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
-      
+
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
-      
+
       // Start timer
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime((prev) => prev + 1);
       }, 1000);
-      
-      toast.success("Recording started");
     } catch (error) {
       console.error("Error accessing microphone:", error);
       toast.error("Could not access microphone");
@@ -61,12 +62,10 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      
-      toast.success("Recording saved");
     }
   };
 
@@ -79,7 +78,7 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
 
   const togglePlayback = () => {
     if (!audioBlob || !audioRef.current) return;
-    
+
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -92,7 +91,7 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -105,7 +104,7 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
           className="hidden"
         />
       )}
-      
+
       {!audioBlob && !isRecording && (
         <Button
           type="button"
@@ -118,7 +117,7 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
           Start Recording
         </Button>
       )}
-      
+
       {isRecording && (
         <div className="space-y-2">
           <div className="flex items-center justify-center gap-2 p-4 bg-red-50 dark:bg-red-950 rounded-lg">
@@ -138,7 +137,7 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
           </Button>
         </div>
       )}
-      
+
       {audioBlob && !isRecording && (
         <div className="space-y-2">
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
