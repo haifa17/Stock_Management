@@ -3,6 +3,7 @@ import { lotService } from "@/lib/airtable/lot-service";
 import { productService } from "@/lib/airtable/product-service";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import twilio from "twilio";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -10,7 +11,11 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
+// Configure Twilio
+const twilioClient =
+  process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+    ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    : null;
 export async function POST(request: Request) {
   try {
     console.log("=== INBOUND API CALLED ===");
@@ -118,9 +123,8 @@ export async function POST(request: Request) {
     });
 
     console.log("Lot created successfully:", newLot);
-
-    // TODO: Send WhatsApp notification to marketer
-    // await sendMarketerNotification(newLot);
+    // Send WhatsApp notification to marketer
+    await sendMarketerNotification(newLot, voiceNoteUrl);
 
     return NextResponse.json(
       {
@@ -146,26 +150,69 @@ export async function POST(request: Request) {
   }
 }
 
-// Helper function to send marketer notification
-// async function sendMarketerNotification(lot: any) {
-// TODO: Implement WhatsApp notification via Make.com or Twilio
-// console.log("📱 MARKETER NOTIFICATION: New arrival -", lot.lotId);
+// Helper function to send marketer notification via Twilio WhatsApp
+async function sendMarketerNotification(lot: any, voiceNoteUrl: string | null) {
+  // Check if Twilio is configured
+  if (!twilioClient) {
+    console.warn("⚠️ Twilio not configured - skipping WhatsApp notification");
+    console.warn("Missing: TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN");
+    return;
+  }
 
-// try {
-//   await fetch(process.env.MAKE_WEBHOOK_MARKETER_URL || "", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       type: "new_arrival",
-//       lotId: lot.lotId,
-//       product: lot.product,
-//       quantity: lot.qtyReceived,
-//       provider: lot.provider,
-//       grade: lot.grade,
-//       timestamp: new Date().toISOString(),
-//     }),
-//   });
-// } catch (error) {
-//   console.error("Failed to send marketer notification:", error);
-// }
-//}
+  const marketerPhone = process.env.MARKETER_WHATSAPP_NUMBER;
+  const twilioWhatsAppNumber =
+    process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+14155238886"; // Default sandbox
+
+  if (!marketerPhone) {
+    console.warn(
+      "⚠️ MARKETER_WHATSAPP_NUMBER not configured - skipping notification",
+    );
+    return;
+  }
+
+  console.log("📱 Sending WhatsApp notification for lot:", lot.lotId);
+
+  try {
+    // Format the message
+    const messageBody = `
+🚚 *New Inventory Arrival*
+
+📦 *Lot ID:* ${lot.lotId}
+🏷️ *Product:* ${lot.product}
+📊 *Quantity:* ${lot.qtyReceived}
+👤 *Provider:* ${lot.provider || "N/A"}
+⭐ *Grade:* ${lot.grade || "N/A"}
+🏭 *Brand:* ${lot.brand || "N/A"}
+🌍 *Origin:* ${lot.origin || "N/A"}
+✅ *Condition:* ${lot.condition || "N/A"}
+📅 *Production Date:* ${lot.productionDate || "N/A"}
+📝 *Notes:* ${lot.notes || "None"}
+👤 *Created by:* ${lot.createdBy || "Unknown"}
+${voiceNoteUrl ? `\n🎤 *Voice Note:* ${voiceNoteUrl}` : ""}
+
+⏰ ${new Date().toLocaleString()}
+    `.trim();
+
+    // Send WhatsApp message
+    const message = await twilioClient.messages.create({
+      from: twilioWhatsAppNumber,
+      to: marketerPhone.startsWith("whatsapp:")
+        ? marketerPhone
+        : `whatsapp:${marketerPhone}`,
+      body: messageBody,
+    });
+
+    console.log("✓ WhatsApp notification sent successfully");
+    console.log("Message SID:", message.sid);
+    console.log("Status:", message.status);
+  } catch (error) {
+    console.error("✗ Failed to send WhatsApp notification:", error);
+
+    // Log specific Twilio errors
+    if (error && typeof error === "object" && "code" in error) {
+      console.error("Twilio Error Code:", error.code);
+    }
+
+    // Don't throw - we don't want to fail the inbound creation if notification fails
+  }
+}
