@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Lot } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { VoiceRecorder } from "./Voicerecorder";
+import axios from "axios";
 
 interface OutboundFormProps {
   scannedBatch?: string;
@@ -74,44 +75,37 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
       } else {
         console.log("No voice note to append");
       }
-      const res = await fetch("/api/inventory/outbound", {
-        method: "POST",
-        body: formData,
-      });
-      const responseData = await res.json();
+      const { data: responseData } = await axios.post(
+        "/api/inventory/outbound",
+        formData,
+      );
       console.log("Response data:", responseData);
-      if (res.ok) {
-        setSubmitted(true);
-        toast.success("Order completed!");
-        // Update the selected batch with the new stock from response
-        // 🔹 Fetch the updated lot from Airtable to get computed fields
-        const updatedLotRes = await fetch(
+
+      setSubmitted(true);
+      toast.success("Order completed!");
+      // Update the selected batch with the new stock from response
+      // 🔹 Fetch the updated lot from Airtable to get computed fields
+      try {
+        const { data: refreshedLot } = await axios.get(
           `/api/inventory/lots/${selectedBatch.lotId}`,
         );
-        if (updatedLotRes.ok) {
-          const refreshedLot = await updatedLotRes.json();
-          setSelectedBatch(refreshedLot); // UI now shows real currentStock & totalSold
-        } else {
-          console.warn("Could not fetch updated lot, UI may be out of sync");
-        }
-
-        // Also refresh the page data
-        router.refresh();
-        setTimeout(() => {
-          setSubmitted(false);
-          setSelectedBatch(null);
-          setWeightOut("");
-          setPieces("");
-          setNotes("");
-          setVoiceNote(null);
-        }, 2000);
-      } else {
-        toast.error(responseData.error || "Failed to complete order");
-        console.error("API Error:", responseData);
+        setSelectedBatch(refreshedLot); // update UI
+      } catch (err) {
+        console.warn("Could not fetch updated lot, UI may be out of sync", err);
       }
-    } catch (error) {
+      // Also refresh the page data
+      router.refresh();
+      setTimeout(() => {
+        setSubmitted(false);
+        setSelectedBatch(null);
+        setWeightOut("");
+        setPieces("");
+        setNotes("");
+        setVoiceNote(null);
+      }, 2000);
+    } catch (error: any) {
       console.error("Error:", error);
-      toast.error("Connection error");
+      toast.error(error.response?.data?.error || "Connection error");
     } finally {
       setIsSubmitting(false);
     }

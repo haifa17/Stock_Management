@@ -8,6 +8,14 @@ import { QuickBooksDataModal } from "./QuickBooksDataModal";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import axios from "axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type ModalType = "invoices" | "inventory" | "customers" | "reports";
 
@@ -16,6 +24,7 @@ const QuickBookPage = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -42,8 +51,7 @@ const QuickBookPage = () => {
 
   const checkConnectionStatus = async () => {
     try {
-      const response = await fetch("/api/quickbooks/status");
-      const data = await response.json();
+      const { data } = await axios.get("/api/quickbooks/status");
       setIsConnected(data.connected);
     } catch (error) {
       console.error("Error checking QB status:", error);
@@ -64,8 +72,7 @@ const QuickBookPage = () => {
     setModalData(null);
 
     try {
-      const response = await fetch(endpoint);
-      const data = await response.json();
+      const { data } = await axios.get(endpoint);
       setModalData(data);
     } catch (error) {
       console.error(`Error fetching ${title}:`, error);
@@ -95,21 +102,16 @@ const QuickBookPage = () => {
     );
   };
 
-  const handleDisconnect = async () => {
-    if (!confirm("Are you sure you want to disconnect QuickBooks?")) return;
-
+  const disconnectQuickBooks = async () => {
     try {
-      const response = await fetch("/api/quickbooks/disconnect", {
-        method: "POST",
-      });
-
-      if (response.ok) {
-        setIsConnected(false);
-        toast.success("Disconnected from QuickBooks");
-      }
+      await axios.post("/api/quickbooks/disconnect");
+      setIsConnected(false);
+      toast.success("Disconnected from QuickBooks");
     } catch (error) {
       console.error("Error disconnecting:", error);
       toast.error("Failed to disconnect");
+    } finally {
+      setConfirmOpen(false);
     }
   };
 
@@ -205,11 +207,41 @@ const QuickBookPage = () => {
                 <Button
                   className="cursor-pointer"
                   variant="destructive"
-                  onClick={handleDisconnect}
+                  onClick={() => setConfirmOpen(true)}
                 >
                   Disconnect QuickBooks
                 </Button>
               </div>
+              {confirmOpen && (
+                <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                  <DialogContent className="w-md!">
+                    <DialogHeader>
+                      <DialogTitle>Disconnect QuickBooks</DialogTitle>
+                    </DialogHeader>
+
+                    <p className="text-sm text-muted-foreground">
+                      Are you sure you want to disconnect QuickBooks?
+                    </p>
+
+                    <DialogFooter className="mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setConfirmOpen(false)}
+                        className="cursor-pointer"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={disconnectQuickBooks}
+                        className="cursor-pointer"
+                      >
+                        Disconnect
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         ) : (

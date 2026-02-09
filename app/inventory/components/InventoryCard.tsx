@@ -9,6 +9,7 @@ import { InventoryItem } from "@/lib/types";
 import { toast } from "react-toastify";
 import { InventoryStatus } from "@/lib/airtable/airtable-types";
 import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
+import axios from "axios";
 
 interface InventoryCardProps {
   item: InventoryItem;
@@ -21,22 +22,14 @@ export function InventoryCard({ item }: InventoryCardProps) {
   const handleUpdateStatus = async (status: InventoryStatus) => {
     setIsUpdating(true);
     try {
-      const response = await fetch(`/api/inventory/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+      await axios.patch(`/api/inventory/${item.id}`, {
+        status,
       });
-
-      if (response.ok) {
-        updateItemStatus(item.id, status);
-        toast.success("Status updated successfully");
-      } else {
-        console.error("Error updating status");
-        toast.error("Error updating status");
-      }
-    } catch (error) {
+      updateItemStatus(item.id, status);
+      toast.success("Status updated successfully");
+    } catch (error: any) {
       console.error("Error:", error);
-      toast.error("Connection error");
+      toast.error(error.response?.data?.error || "Error updating status");
     } finally {
       setIsUpdating(false);
     }

@@ -11,6 +11,7 @@ import { AlertTriangle } from "lucide-react";
 import { Product } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { VoiceRecorder } from "./Voicerecorder";
+import axios from "axios";
 
 interface InboundFormProps {
   scannedProduct?: string;
@@ -84,33 +85,28 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   const handleVoiceRecording = (blob: Blob) => {
     setVoiceNote(blob.size > 0 ? blob : null);
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
       let productToUse = selectedProduct?.name;
       // If emergency product, create it first
       if (isEmergencyProduct) {
-        const emergencyRes = await fetch("/api/products/emergency", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const { data: emergencyData } = await axios.post(
+          "/api/products/emergency",
+          {
             name: emergencyProductData.name,
             category: emergencyProductData.category,
             type: emergencyProductData.type,
             alertAdmin: true, // Trigger admin notification
-          }),
-        });
-
-        if (!emergencyRes.ok) {
-          const errorData = await emergencyRes.json();
-          console.error("Emergency product error:", errorData);
-          toast.error(errorData.error || "Failed to create emergency product");
+          },
+        );
+        if (!emergencyData) {
+          toast.error("Failed to create emergency product");
           setIsSubmitting(false);
           return;
         }
-        const emergencyData = await emergencyRes.json();
         productToUse = emergencyData.name;
         // toast.info("Admin has been alerted about this new product");
       }
@@ -144,44 +140,36 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           value instanceof Blob ? `Blob(${value.size} bytes)` : value,
         );
       }
-
       console.log("Sending request to /api/inventory/inbound");
-
-      const res = await fetch("/api/inventory/inbound", {
-        method: "POST",
-        body: formDataToSend,
-      });
-      const responseData = await res.json();
+      const { data: responseData } = await axios.post(
+        "/api/inventory/inbound",
+        formDataToSend,
+      );
       console.log("Inbound response:", responseData);
-      if (res.ok) {
-        setSubmitted(true);
-        toast.success("Arrival confirmed!");
-        router.refresh();
-        setTimeout(() => {
-          setSubmitted(false);
-          setSelectedProductId("");
-          setIsEmergencyProduct(false);
-          setEmergencyProductData({ name: "", category: "", type: "" });
-          setFormData({
-            provider: "",
-            grade: "",
-            brand: "",
-            origin: "",
-            condition: "",
-            productionDate: "",
-            qtyReceived: "",
-            notes: "",
-          });
-          setVoiceNote(null);
-          setLotId("");
-        }, 2000);
-      } else {
-        toast.error(responseData.error || "Failed to confirm arrival");
-        console.error("API Error:", responseData);
-      }
-    } catch (error) {
+      setSubmitted(true);
+      toast.success("Arrival confirmed!");
+      router.refresh();
+      setTimeout(() => {
+        setSubmitted(false);
+        setSelectedProductId("");
+        setIsEmergencyProduct(false);
+        setEmergencyProductData({ name: "", category: "", type: "" });
+        setFormData({
+          provider: "",
+          grade: "",
+          brand: "",
+          origin: "",
+          condition: "",
+          productionDate: "",
+          qtyReceived: "",
+          notes: "",
+        });
+        setVoiceNote(null);
+        setLotId("");
+      }, 2000);
+    } catch (error: any) {
       console.error("Error:", error);
-      toast.error("Connection error");
+      toast.error(error.response?.data?.error || "Connection error");
     } finally {
       setIsSubmitting(false);
     }

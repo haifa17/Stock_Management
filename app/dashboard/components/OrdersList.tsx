@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Order } from "@/lib/types";
 import { toast } from "react-toastify";
 import { OrderStatus } from "@/lib/airtable/airtable-types";
+import axios from "axios";
 
 interface OrdersListProps {
   initialOrders: Order[];
@@ -18,6 +19,7 @@ const ORDER_STATUS_STYLES: Record<OrderStatus, string> = {
   Pending: "bg-yellow-100 text-yellow-800",
   Confirmed: "bg-blue-100 text-blue-800",
   Completed: "bg-green-100 text-green-800",
+  Cancelled: "bg-red-500 text-white",
 };
 
 export function OrdersList({ initialOrders }: OrdersListProps) {
@@ -26,30 +28,24 @@ export function OrdersList({ initialOrders }: OrdersListProps) {
 
   const updateOrderStatus = async (order: Order, status: OrderStatus) => {
     setIsUpdating(true);
+
     try {
-      // Appeler l'API pour mettre à jour Airtable
-      const response = await fetch(`/api/order/${order.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+      const { data: updatedOrder } = await axios.patch(
+        `/api/order/${order.id}`,
+        { status },
+      );
 
-      if (response.ok) {
-        const updatedOrder: Order = await response.json();
-        // Update local state after DB confirms
-        setOrders((prevOrders) =>
-          prevOrders.map((o) =>
-            o.id === order.id ? { ...o, status: status } : o,
-          ),
-        );
+      // Update local state after DB confirms
+      setOrders((prevOrders) =>
+        prevOrders.map((o) =>
+          o.id === order.id ? { ...o, status: updatedOrder.status } : o,
+        ),
+      );
 
-        toast.success("Status updated successufly");
-      } else {
-        console.error("Error updating status");
-        toast.error("Error updating status");
-      }
-    } catch (error) {
-      console.error("Erreur:", error);
+      toast.success("Status updated successfully");
+    } catch (error: any) {
+      console.error("Error updating status:", error);
+      toast.error(error.response?.data?.error || "Error updating status");
     } finally {
       setIsUpdating(false);
     }
