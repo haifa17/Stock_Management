@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DashboardStats } from "./components/DashboardStats";
-import { StockByType } from "./components/StockByType";
 import { LowStockAlert } from "./components/LowStockAlert";
 import { calculateDashboardData } from "./utils";
 import LogoutButton from "@/components/buttons/LogoutButton";
@@ -41,6 +40,11 @@ export default async function DashboardPage() {
             <Link href="/sales">
               <Button className=" cursor-pointer" variant="outline" size="sm">
                 Sales
+              </Button>
+            </Link>
+            <Link href="/quickbook">
+              <Button className=" cursor-pointer" size="sm">
+                Connect to QuickBooks
               </Button>
             </Link>
           </div>

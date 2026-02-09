@@ -11,8 +11,12 @@ export interface User {
   email: string;
   role: UserRole;
   name?: string;
+  qb_access_token?: string;
+  qb_refresh_token?: string;
+  qb_realm_id?: string;
+  qb_expires_at?: string;
+  qb_connected?: boolean;
 }
-
 export interface InventoryItem {
   id: string;
   name: string;
