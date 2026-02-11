@@ -27,7 +27,5 @@ jobs:
 
       - name: Run SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectKey: haifa17_Stock_Management # from SonarCloud
-          organization: haifa17 # from SonarCloud
-          token: ${{ secrets.SONAR_TOKEN }} # store this in GitHub secrets
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
