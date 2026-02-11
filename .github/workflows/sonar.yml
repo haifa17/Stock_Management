@@ -26,7 +26,7 @@ jobs:
         run: npm ci
 
       - name: Run SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@<full SHA>
         with:
           projectKey: haifa17_Stock_Management # from SonarCloud
           organization: haifa17 # from SonarCloud
