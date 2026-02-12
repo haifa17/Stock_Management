@@ -4,7 +4,7 @@ export type ProductType = "carcass" | "primal" | "cut";
 export type ProductCategory = "Beef" | "Chicken" | "Pork" | "Lamb" | "Other";
 
 // Status Types
-export type InventoryStatus = "Available" | "Reserved" | "Sold" | "Low Stock";
+export type InventoryStatus = "Available" | "Reserved" | "Sold" | "Low Stock"|"Returned" |"Damaged";
 export type OrderStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 export type BatchStatus = "Active" | "Depleted" | "Expired";
 
