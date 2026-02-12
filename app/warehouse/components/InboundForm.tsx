@@ -384,7 +384,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
 
       {/* Quantity Received (Big Pad) */}
       <div className="space-y-2">
-        <Label htmlFor="qtyReceived">Qty Received (kg)</Label>
+        <Label htmlFor="qtyReceived">Qty Received (£)</Label>
         <Input
           id="qtyReceived"
           type="number"

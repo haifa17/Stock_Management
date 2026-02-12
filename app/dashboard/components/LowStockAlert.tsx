@@ -17,7 +17,7 @@ export function LowStockAlert({ items }: LowStockAlertProps) {
             <div key={item.id} className="flex justify-between items-center text-sm">
               <span className="text-foreground">{item.name}</span>
               <span className="text-red-600 font-medium">
-                {item.quantity} pcs / {item.weight} kg
+                {item.quantity} pcs / {item.weight} £
               </span>
             </div>
           ))}

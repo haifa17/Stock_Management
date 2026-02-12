@@ -148,14 +148,14 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
         />
         {selectedBatch && (
           <p className="text-sm text-muted-foreground">
-            Available: {selectedBatch.currentStock} kg
+            Available: {selectedBatch.currentStock} £
           </p>
         )}
       </div>
 
       {/* Catch Weight Entry */}
       <div className="space-y-2">
-        <Label htmlFor="weightOut">Weight Out (kg)</Label>
+        <Label htmlFor="weightOut">Weight Out (£)</Label>
         <Input
           id="weightOut"
           type="number"

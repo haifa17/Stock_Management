@@ -6,7 +6,7 @@ import LogoutButton from "@/components/buttons/LogoutButton";
 import { QuickBooksConnect } from "./QuickBooksConnect";
 import { QuickBooksDataModal } from "./QuickBooksDataModal";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, LayoutDashboardIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import {
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Link from "next/link";
 
 type ModalType = "invoices" | "inventory" | "customers" | "reports";
 
@@ -128,7 +129,15 @@ const QuickBookPage = () => {
   return (
     <main className="min-h-screen bg-muted p-4">
       <div className="max-w-3xl mx-auto space-y-8">
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Link href="/dashboard" className="flex-1">
+            <Button
+              variant="outline"
+              className="bg-transparent cursor-pointer"
+            >
+              <LayoutDashboardIcon /> Dashboard
+            </Button>
+          </Link>
           <LogoutButton />
         </div>
 

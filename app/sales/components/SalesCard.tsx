@@ -22,7 +22,7 @@ export function SalesCard({ sale }: SalesCardProps) {
         <div className="grid grid-cols-3 gap-2 text-sm mb-3">
           <div>
             <p className="text-muted-foreground">Weight Out</p>
-            <p className="font-medium text-foreground">{sale.weightOut} kg</p>
+            <p className="font-medium text-foreground">{sale.weightOut} £</p>
           </div>
           <div>
             <p className="text-muted-foreground">Pieces</p>

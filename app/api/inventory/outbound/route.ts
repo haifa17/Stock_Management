@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     if (weightOut > lot.currentStock) {
       return NextResponse.json(
         {
-          error: `Insufficient stock. Available: ${lot.currentStock} kg, Requested: ${weightOut} kg`,
+          error: `Insufficient stock. Available: ${lot.currentStock} £, Requested: ${weightOut} £`,
         },
         { status: 400 },
       );
@@ -158,13 +158,13 @@ async function sendSaleNotification(
 🏷️ *Product:* ${originalLot.product}
 
 📊 *Sale Details:*
-⚖️ Weight Out: ${sale.weightOut} kg
+⚖️ Weight Out: ${sale.weightOut} £
 🔢 Pieces: ${sale.pieces}
 💰 Sold: ${percentageSold}% of lot
 
 📈 *Stock Status:*
-Before: ${originalLot.currentStock} kg
-After: ${updatedLot.currentStock} kg (${remainingPercentage}% remaining)
+Before: ${originalLot.currentStock} £
+After: ${updatedLot.currentStock} £ (${remainingPercentage}% remaining)
 ${updatedLot.currentStock <= 0 ? "⚠️ *LOT DEPLETED*" : ""}
 
 📝 *Notes:* ${sale.notes || "None"}
@@ -219,7 +219,7 @@ async function sendLowStockAlert(
 
 📦 *Lot ID:* ${lot.lotId}
 🏷️ *Product:* ${lot.product}
-📊 *Remaining:* ${lot.currentStock} kg (${remainingPercentage}%)
+📊 *Remaining:* ${lot.currentStock} £ (${remainingPercentage}%)
 
 🔔 This lot is running low. Consider reordering soon!
     `.trim();
