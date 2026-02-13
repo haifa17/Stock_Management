@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { toast } from "react-toastify";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Camera, Upload, X } from "lucide-react";
 import { Product } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { VoiceRecorder } from "./Voicerecorder";
@@ -24,7 +24,9 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   const selectedProduct =
     products?.find((p) => p.id === selectedProductId) || null;
   const [voiceNote, setVoiceNote] = useState<Blob | null>(null);
-
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [invoicePreview, setInvoicePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEmergencyProduct, setIsEmergencyProduct] = useState(false);
   const [emergencyProductData, setEmergencyProductData] = useState({
     name: "",
@@ -87,6 +89,54 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   const handleVoiceRecording = (blob: Blob) => {
     setVoiceNote(blob.size > 0 ? blob : null);
   };
+  // Handle file upload
+  // Handle file upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "application/pdf",
+      ];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please upload an image (JPG, PNG) or PDF file");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size must be less than 5MB");
+        return;
+      }
+
+      setInvoiceFile(file);
+
+      // Create preview for images
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setInvoicePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setInvoicePreview(null); // PDF doesn't need preview
+      }
+
+      toast.success("Invoice uploaded successfully");
+    }
+  };
+
+  // Remove invoice
+  const removeInvoice = () => {
+    setInvoiceFile(null);
+    setInvoicePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +185,9 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
       } else {
         console.log("No voice note to append");
       }
-
+      if (invoiceFile) {
+        formDataToSend.append("invoice", invoiceFile);
+      }
       // Log FormData contents
       console.log("FormData contents:");
       for (const [key, value] of formDataToSend.entries()) {
@@ -171,6 +223,8 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           notes: "",
         });
         setVoiceNote(null);
+        setInvoiceFile(null);
+        setInvoicePreview(null);
         setLotId("");
       }, 2000);
     } catch (error: any) {
@@ -434,7 +488,68 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
       </div>
+      {/* Invoice Upload Section - SIMPLIFIED */}
+      <div className="space-y-2">
+        <Label>Invoice (optional)</Label>
 
+        {/* Upload Button */}
+        {!invoiceFile && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSubmitting}
+            className="w-full cursor-pointer"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Invoice
+          </Button>
+        )}
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+
+        {/* Invoice Preview */}
+        {invoiceFile && (
+          <div className="relative border-2 border-green-300 rounded-lg p-3 bg-green-50">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={removeInvoice}
+              className="absolute top-1 right-1 h-6 w-6 p-0 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+
+            {invoicePreview ? (
+              <img
+                src={invoicePreview}
+                alt="Invoice preview"
+                className="w-full rounded"
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-green-800">
+                    {invoiceFile.name}
+                  </p>
+                  <p className="text-xs text-green-600">
+                    {(invoiceFile.size / 1024).toFixed(1)} KB
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       {/* Voice Memo */}
       <div className="space-y-2">
         <Label htmlFor="notes">Notes (optional)</Label>

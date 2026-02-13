@@ -59,6 +59,7 @@ export interface AirtableLotFields {
   Status: BatchStatus;
   Notes?: string;
   VoiceNoteUrl?: string;
+  InvoiceUrl?: string;
   ArrivalDate: string; // Auto-generated timestamp
   CreatedBy?: string; // User ID
 }

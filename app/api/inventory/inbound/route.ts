@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     const expirationDate = formData.get("expirationDate") as string;
     const notes = formData.get("notes") as string;
     const voiceNote = formData.get("voiceNote") as File | null;
+    const invoice = formData.get("invoice") as File | null;
     const createdBy = formData.get("createdBy") as string;
 
     console.log("Extracted fields:", {
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     }
 
     let voiceNoteUrl = null;
-
+    let invoiceUrl = null;
     // Upload voice note to Cloudinary if present
     if (voiceNote && voiceNote.size > 0) {
       console.log("Voice note detected, starting upload...");
@@ -105,8 +106,41 @@ export async function POST(request: Request) {
     } else {
       console.log("No voice note in request");
     }
+    // Upload invoice to Cloudinary if present
+    if (invoice && invoice.size > 0) {
+      console.log("Invoice detected, starting upload...");
+      console.log("Invoice type:", invoice.type);
+      console.log("Invoice size:", invoice.size);
+
+      try {
+        const bytes = await invoice.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const base64File = buffer.toString("base64");
+
+        // Determine resource type based on file type
+        const isPDF = invoice.type === "application/pdf";
+        const mimeType = isPDF ? "application/pdf" : invoice.type;
+        const dataURI = `data:${mimeType};base64,${base64File}`;
+
+        const uploadResponse = await cloudinary.uploader.upload(dataURI, {
+          resource_type: isPDF ? "raw" : "image",
+          folder: "invoices/inbound",
+          public_id: `invoice-${lotId}-${Date.now()}`,
+          format: isPDF ? "pdf" : undefined,
+          access_mode: "public",
+          type: "upload",
+        });
+
+        invoiceUrl = uploadResponse.secure_url;
+        console.log("✓ Invoice uploaded successfully:", invoiceUrl);
+      } catch (uploadError) {
+        console.error("✗ Error uploading invoice:", uploadError);
+        // Continue without invoice rather than failing the entire request
+      }
+    }
 
     console.log("Creating lot with voiceNoteUrl:", voiceNoteUrl);
+    console.log("Creating lot with invoiceUrl:", invoiceUrl);
 
     // Create lot/batch record
     const newLot = await lotService.create({
@@ -124,17 +158,19 @@ export async function POST(request: Request) {
       status: "Available",
       notes: notes || "",
       voiceNoteUrl: voiceNoteUrl || undefined,
+      invoiceUrl: invoiceUrl || undefined,
       createdBy: createdBy,
     });
 
     console.log("Lot created successfully:", newLot);
     // Send WhatsApp notification to marketer
-    await sendMarketerNotification(newLot, voiceNoteUrl);
+    await sendMarketerNotification(newLot, voiceNoteUrl, invoiceUrl);
 
     return NextResponse.json(
       {
         ...newLot,
         voiceNoteUrl: voiceNoteUrl,
+        invoiceUrl: invoiceUrl,
       },
       { status: 201 },
     );
@@ -156,7 +192,11 @@ export async function POST(request: Request) {
 }
 
 // Helper function to send marketer notification via Twilio WhatsApp
-async function sendMarketerNotification(lot: any, voiceNoteUrl: string | null) {
+async function sendMarketerNotification(
+  lot: any,
+  voiceNoteUrl: string | null,
+  invoiceUrl: string | null,
+) {
   // Check if Twilio is configured
   if (!twilioClient) {
     console.warn("⚠️ Twilio not configured - skipping WhatsApp notification");
@@ -195,7 +235,7 @@ async function sendMarketerNotification(lot: any, voiceNoteUrl: string | null) {
 📅 *Expiration Date:* ${lot.expirationDate || "N/A"}
 📝 *Notes:* ${lot.notes || "None"}
 ${voiceNoteUrl ? `\n🎤 *Voice Note:* ${voiceNoteUrl}` : ""}
-
+${invoiceUrl ? `\n🧾 *Invoice:* ${invoiceUrl}` : ""}
 ⏰ ${new Date().toLocaleString()}
     `.trim();
 

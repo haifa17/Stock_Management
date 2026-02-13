@@ -22,6 +22,7 @@ function transformLotRecord(record: any): Lot {
     status: fields.Status,
     notes: fields.Notes,
     voiceNoteUrl: fields.VoiceNoteUrl,
+    invoiceUrl: fields.InvoiceUrl,
     arrivalDate: fields.ArrivalDate,
     createdBy: fields.CreatedBy,
   };

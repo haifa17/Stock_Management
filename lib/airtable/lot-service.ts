@@ -22,6 +22,7 @@ function transformLotRecord(record: any): Lot {
     status: fields.Status,
     notes: fields.Notes,
     voiceNoteUrl: fields.VoiceNoteUrl,
+    invoiceUrl: fields.InvoiceUrl,
     arrivalDate: fields.ArrivalDate,
     createdBy: fields.CreatedBy,
   };
@@ -57,7 +58,9 @@ export const lotService = {
       if (data.voiceNoteUrl) {
         recordData.VoiceNoteUrl = data.voiceNoteUrl; // Add this
       }
-
+      if (data.invoiceUrl) {
+        recordData.InvoiceUrl = data.invoiceUrl; // Add invoice URL
+      }
       if (data.createdBy) {
         recordData.CreatedBy = data.createdBy;
       }

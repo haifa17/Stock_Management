@@ -2,9 +2,9 @@ export default function Loading() {
   return (
     <div className="flex justify-center items-center h-screen">
       <img
-        src="https://media.tenor.com/eFde1mp-8fYAAAAM/carregando.gif"
+        src="https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif"
         alt="Loading"
-        className="w-32 h-32"
+        className="w-52 h-52"
       />
     </div>
   );

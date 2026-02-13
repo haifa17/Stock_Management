@@ -51,6 +51,7 @@ export interface Lot {
   status: BatchStatus;
   notes?: string;
   voiceNoteUrl?: string;
+  invoiceUrl?: string;
   arrivalDate: string;
   createdBy?: string;
 }
