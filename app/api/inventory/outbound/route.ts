@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     const batchId = formData.get("batchId") as string;
     const weightOut = parseFloat(formData.get("weightOut") as string);
     const pieces = parseInt(formData.get("pieces") as string);
+    const price = parseInt(formData.get("price") as string);
     const client = formData.get("client") as string;
     const notes = formData.get("notes") as string;
     const voiceNote = formData.get("voiceNote") as File | null;
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
       lotId: batchId,
       weightOut: weightOut,
       pieces: pieces,
+      price: price,
       client: client,
       notes: notes,
       voiceNoteUrl: voiceNoteUrl || undefined,
@@ -163,6 +165,7 @@ async function sendSaleNotification(
 👤 Client Name: ${sale.client} 
 ⚖️ Weight Out: ${sale.weightOut} £
 🔢 Pieces: ${sale.pieces}
+💸 Proposal Sales Price: ${sale.price}
 💰 Sold: ${percentageSold}% of lot
 
 📈 *Stock Status:*

@@ -418,7 +418,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
       </div>
-      {/* Quantity Received (Big Pad) */}
+      {/* price */}
       <div className="space-y-2">
         <Label htmlFor="price">Price ($)</Label>
         <Input

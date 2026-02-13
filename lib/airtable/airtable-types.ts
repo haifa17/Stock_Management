@@ -72,6 +72,7 @@ export interface AirtableSaleFields {
   LotId: string; // 📝 Text field - stores the custom lot ID string (e.g., "Rabbit987-1769700497858")
   Lots: string | string[]; // 🔗 Linked record field - links to Lots table (Airtable record ID)  WeightOut: number; // £
   Pieces: number;
+  Price: number;
   Client: string;
   Notes?: string;
   VoiceNoteUrl?: string;

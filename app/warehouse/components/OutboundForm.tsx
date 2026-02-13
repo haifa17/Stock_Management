@@ -23,6 +23,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
   const [weightOut, setWeightOut] = useState("");
   const [pieces, setPieces] = useState("");
   const [client, setClient] = useState("");
+  const [price, setPrice] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -66,6 +67,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
       formData.append("weightOut", weightOut);
       formData.append("pieces", pieces);
       formData.append("client", client);
+      formData.append("price", price);
 
       if (voiceNote) {
         formData.append("voiceNote", voiceNote, "voice-note.webm");
@@ -104,6 +106,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
         setPieces("");
         setNotes("");
         setClient("");
+        setPrice("");
         setVoiceNote(null);
       }, 2000);
     } catch (error: any) {
@@ -197,6 +200,22 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
           onChange={(e) => setClient(e.target.value)}
           required
           disabled={isSubmitting}
+        />
+      </div>
+      {/* price */}
+      <div className="space-y-2">
+        <Label htmlFor="price">Proposal Sales Price ($)</Label>
+        <Input
+          id="price"
+          type="number"
+          step="0.1"
+          placeholder="0"
+          min="0"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+          disabled={isSubmitting}
+          className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
       </div>
       <div className="space-y-2">

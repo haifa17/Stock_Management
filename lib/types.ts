@@ -63,6 +63,7 @@ export interface Sale {
   weightOut: number;
   pieces: number;
   client: string;
+  price: number;
   notes?: string;
   voiceNoteUrl?: string;
   saleDate: string;

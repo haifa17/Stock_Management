@@ -12,6 +12,7 @@ function transformSaleRecord(record: any): Sale {
     lotId: lotId, // This is the custom lot ID string from the text field    weightOut: Number(fields.WeightOut) || 0,
     weightOut: Number(fields.WeightOut) || 0,
     pieces: Number(fields.Pieces) || 0,
+    price: Number(fields.Price) || 0,
     client: fields.Client,
     notes: fields.Notes,
     voiceNoteUrl: fields.VoiceNoteUrl,
@@ -39,6 +40,7 @@ export const saleService = {
         WeightOut: data.weightOut,
         Client:data.client,
         Pieces: data.pieces,
+        Price: data.price,
         SaleDate: new Date().toISOString(),
       };
 
