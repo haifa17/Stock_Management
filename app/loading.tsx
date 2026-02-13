@@ -4,7 +4,7 @@ export default function Loading() {
       <img
         src="https://media.tenor.com/eFde1mp-8fYAAAAM/carregando.gif"
         alt="Loading"
-        className="w-52 h-52"
+        className="w-32 h-32"
       />
     </div>
   );
