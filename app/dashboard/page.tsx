@@ -6,6 +6,7 @@ import { calculateDashboardData } from "./utils";
 import LogoutButton from "@/components/buttons/LogoutButton";
 import { RecentActivity } from "./components/RecentActivity";
 import { Suspense } from "react";
+import Loading from "../loading";
 
 export const revalidate = 0; // Données en temps réel
 
@@ -16,7 +17,7 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<Loading />}>
       <main className="min-h-screen bg-muted p-4">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="flex justify-end">

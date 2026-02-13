@@ -2,6 +2,7 @@ import { lotService } from "@/lib/airtable/lot-service";
 import WarehouseClient from "./components/WarehouseClient";
 import { productService } from "@/lib/airtable/product-service";
 import { Suspense } from "react";
+import Loading from "../loading";
 
 interface WarehousePageProps {
   searchParams: Promise<{
@@ -19,7 +20,7 @@ export default async function WarehousePage({
     productService.getAll(),
   ]);
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<Loading />}>
       <WarehouseClient
         initialTab={initialTab}
         batches={batches}

@@ -4,6 +4,7 @@ import LogoutButton from "@/components/buttons/LogoutButton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Suspense } from "react";
+import Loading from "../loading";
 
 export const revalidate = 0; // ✅ Disable cache
 export const dynamic = "force-dynamic"; // ✅ Force dynamic rendering
@@ -12,7 +13,7 @@ export default async function SalesPage() {
   const salesWithProducts = await saleService.getAllWithProductInfo();
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<Loading />}>
       <main className="min-h-screen bg-muted p-4">
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Header */}

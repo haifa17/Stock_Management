@@ -6,7 +6,7 @@ import LogoutButton from "@/components/buttons/LogoutButton";
 import { QuickBooksConnect } from "./QuickBooksConnect";
 import { QuickBooksDataModal } from "./QuickBooksDataModal";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Loader2, LayoutDashboardIcon } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import {
@@ -135,7 +135,7 @@ const QuickBookPage = () => {
               variant="outline"
               className="bg-transparent cursor-pointer"
             >
-              <LayoutDashboardIcon /> Dashboard
+              📈 Dashboard
             </Button>
           </Link>
           <LogoutButton />

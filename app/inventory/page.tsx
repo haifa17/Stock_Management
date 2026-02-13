@@ -5,6 +5,7 @@ import { InventoryList } from "./components/InventoryList";
 import LogoutButton from "@/components/buttons/LogoutButton";
 import { inventoryService } from "@/lib/airtable/inventory-service";
 import { Suspense } from "react";
+import Loading from "../loading";
 
 export const revalidate = 0; // Désactiver le cache pour avoir les données en temps réel
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export default async function InventoryPage() {
   const inventory = await inventoryService.getAll();
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<Loading />}>
       <main className="min-h-screen bg-muted p-4">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="flex justify-end">
