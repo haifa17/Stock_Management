@@ -43,7 +43,7 @@ export function SalesCard({ sale }: SalesCardProps) {
         </div>
         <div className="text-sm">
           <p className="text-muted-foreground font-medium">
-            Proposal Sales Price
+            Proposed Sales Price
           </p>
           <p className="font-semibold text-foreground">{sale.price} $</p>
         </div>

@@ -165,7 +165,7 @@ async function sendSaleNotification(
 👤 Client Name: ${sale.client} 
 ⚖️ Weight Out: ${sale.weightOut} £
 🔢 Pieces: ${sale.pieces}
-💸 Proposal Sales Price: ${sale.price}
+💸 Proposed Sales Price: ${sale.price}
 💰 Sold: ${percentageSold}% of lot
 
 📈 *Stock Status:*

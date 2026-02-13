@@ -204,7 +204,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
       </div>
       {/* price */}
       <div className="space-y-2">
-        <Label htmlFor="price">Proposal Sales Price ($)</Label>
+        <Label htmlFor="price">Proposed Sales Price ($)</Label>
         <Input
           id="price"
           type="number"
