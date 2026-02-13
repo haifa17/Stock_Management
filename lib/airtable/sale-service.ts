@@ -12,6 +12,7 @@ function transformSaleRecord(record: any): Sale {
     lotId: lotId, // This is the custom lot ID string from the text field    weightOut: Number(fields.WeightOut) || 0,
     weightOut: Number(fields.WeightOut) || 0,
     pieces: Number(fields.Pieces) || 0,
+    client: fields.Client,
     notes: fields.Notes,
     voiceNoteUrl: fields.VoiceNoteUrl,
     saleDate: fields.SaleDate,
@@ -36,6 +37,7 @@ export const saleService = {
         LotId: data.lotId, // ✅ Text field - the custom lot ID string
         Lots: [lot.id], // ✅ Linked record - the Airtable record ID
         WeightOut: data.weightOut,
+        Client:data.client,
         Pieces: data.pieces,
         SaleDate: new Date().toISOString(),
       };

@@ -426,6 +426,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           type="number"
           step="0.1"
           placeholder="0"
+          min="0"
           value={formData.price}
           onChange={(e) => setFormData({ ...formData, price: e.target.value })}
           required

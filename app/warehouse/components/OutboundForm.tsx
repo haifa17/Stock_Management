@@ -22,6 +22,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
   const [selectedBatch, setSelectedBatch] = useState<Lot | null>(null);
   const [weightOut, setWeightOut] = useState("");
   const [pieces, setPieces] = useState("");
+  const [client, setClient] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -64,6 +65,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
       formData.append("batchId", selectedBatch.lotId);
       formData.append("weightOut", weightOut);
       formData.append("pieces", pieces);
+      formData.append("client", client);
 
       if (voiceNote) {
         formData.append("voiceNote", voiceNote, "voice-note.webm");
@@ -101,6 +103,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
         setWeightOut("");
         setPieces("");
         setNotes("");
+        setClient("");
         setVoiceNote(null);
       }, 2000);
     } catch (error: any) {
@@ -161,6 +164,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
           type="number"
           step="0.1"
           placeholder="0.0"
+          min="0"
           value={weightOut}
           onChange={(e) => setWeightOut(e.target.value)}
           required
@@ -176,11 +180,23 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
           id="pieces"
           type="number"
           placeholder="0"
+          min="0"
           value={pieces}
           onChange={(e) => setPieces(e.target.value)}
           required
           disabled={isSubmitting}
           className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="client">Client Name</Label>
+        <Input
+          id="client"
+          placeholder="Client name"
+          value={client}
+          onChange={(e) => setClient(e.target.value)}
+          required
+          disabled={isSubmitting}
         />
       </div>
       <div className="space-y-2">

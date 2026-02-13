@@ -3,7 +3,6 @@ import { SalesList } from "./components/SalesList";
 import LogoutButton from "@/components/buttons/LogoutButton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
 import { Suspense } from "react";
 
 export const revalidate = 0; // ✅ Disable cache

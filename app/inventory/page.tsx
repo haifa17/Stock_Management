@@ -4,7 +4,6 @@ import { InventoryFilters } from "./components/InventoryFilters";
 import { InventoryList } from "./components/InventoryList";
 import LogoutButton from "@/components/buttons/LogoutButton";
 import { inventoryService } from "@/lib/airtable/inventory-service";
-import { LayoutDashboardIcon, PlusCircle } from "lucide-react";
 import { Suspense } from "react";
 
 export const revalidate = 0; // Désactiver le cache pour avoir les données en temps réel

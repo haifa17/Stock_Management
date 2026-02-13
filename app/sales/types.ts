@@ -5,6 +5,7 @@ export interface SaleWithProduct {
   product: string; // Added from Lots lookup
   weightOut: number;
   pieces: number;
+  client: string;
   notes?: string;
   saleDate: string;
   processedBy?: string;

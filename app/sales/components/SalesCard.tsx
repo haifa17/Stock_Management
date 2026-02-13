@@ -12,14 +12,14 @@ export function SalesCard({ sale }: SalesCardProps) {
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h3 className="font-semibold text-foreground">{sale.product}</h3>
+            <h3 className="font-semibold text-lg text-foreground">{sale.product}</h3>
             <p className="text-xs text-muted-foreground font-mono">
               Lot: {sale.lotId}
             </p>
           </div>
           <Badge variant="destructive">Sold</Badge>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-sm mb-3">
+        <div className="grid grid-cols-4 gap-2 text-sm mb-3">
           <div>
             <p className="text-muted-foreground">Weight Out</p>
             <p className="font-medium text-foreground">{sale.weightOut} £</p>
@@ -27,6 +27,10 @@ export function SalesCard({ sale }: SalesCardProps) {
           <div>
             <p className="text-muted-foreground">Pieces</p>
             <p className="font-medium text-foreground">{sale.pieces} pcs</p>
+          </div>
+           <div>
+            <p className="text-muted-foreground">Client Name</p>
+            <p className="font-medium text-foreground">{sale.client}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Date</p>

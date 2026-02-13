@@ -36,7 +36,7 @@ export interface Product {
 export interface Lot {
   id: string;
   lotId: string;
-  product: string;// Product name
+  product: string; // Product name
   provider: string;
   grade: string;
   brand: string;
@@ -62,6 +62,7 @@ export interface Sale {
   lotId: string;
   weightOut: number;
   pieces: number;
+  client: string;
   notes?: string;
   voiceNoteUrl?: string;
   saleDate: string;
