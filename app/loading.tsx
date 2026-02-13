@@ -4,7 +4,6 @@ export default function Loading() {
       <img
         src="https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif"
         alt="Loading"
-        className="w-52 h-52"
       />
     </div>
   );
