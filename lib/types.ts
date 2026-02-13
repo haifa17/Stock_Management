@@ -1,6 +1,5 @@
 import {
   BatchStatus,
-  InventoryStatus,
   OrderStatus,
   ProductCategory,
   UserRole,
@@ -17,26 +16,6 @@ export interface User {
   qb_expires_at?: string;
   qb_connected?: boolean;
 }
-export interface InventoryItem {
-  id: string;
-  name: string;
-  lotId: string;
-  type: string;
-  quantity: number;
-  totalSold: number;
-  status: InventoryStatus;
-  arrivalDate: string;
-  expiryDate: string;
-  provider?: string;
-  grade?: string;
-  brand?: string;
-  origin?: string;
-  condition?: string;
-  qtyReceived?: number;
-  notes?: string;
-  voiceNoteUrl?: string;
-}
-
 export interface Order {
   id: string;
   customer: string;
@@ -57,13 +36,15 @@ export interface Product {
 export interface Lot {
   id: string;
   lotId: string;
-  product: string;
+  product: string;// Product name
   provider: string;
   grade: string;
   brand: string;
   origin: string;
   condition: string;
   productionDate: string;
+  expirationDate: string;
+  price: number;
   qtyReceived: number;
   totalSold?: number;
   currentStock: number;
@@ -73,6 +54,8 @@ export interface Lot {
   arrivalDate: string;
   createdBy?: string;
 }
+// Type alias for backwards compatibility - can be removed after full migration
+export type InventoryItem = Lot;
 export interface Sale {
   id: string;
   saleId: string;

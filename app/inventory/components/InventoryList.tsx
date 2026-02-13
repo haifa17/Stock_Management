@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { InventoryCard } from "./InventoryCard";
-import { InventoryItem } from "@/lib/types";
+import {  Lot } from "@/lib/types";
 import {
   Pagination,
   PaginationContent,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/pagination";
 
 interface InventoryListProps {
-  initialInventory: InventoryItem[];
+  initialInventory: Lot[];
 }
 
 const ITEMS_PER_PAGE = 5;
@@ -32,11 +32,15 @@ export function InventoryList({ initialInventory }: InventoryListProps) {
     setCurrentPage(1);
   }, [filter]);
 
-  const filteredInventory =
-    filter === "all"
-      ? inventory
-      : inventory.filter((item) => item.status === filter);
-
+ const filteredInventory = (() => {
+    if (filter === "all") return inventory;
+    if (filter === "Low Stock") {
+      return inventory.filter(
+        (item) => item.status === "Available" && item.currentStock < 20
+      );
+    }
+    return inventory.filter((item) => item.status === filter);
+  })();
   const totalPages = Math.ceil(filteredInventory.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;

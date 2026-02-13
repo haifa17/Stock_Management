@@ -3,7 +3,7 @@ import { SalesList } from "./components/SalesList";
 import LogoutButton from "@/components/buttons/LogoutButton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboardIcon, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { Suspense } from "react";
 
 export const revalidate = 0; // ✅ Disable cache
@@ -32,8 +32,7 @@ export default async function SalesPage() {
                   variant="outline"
                   className="w-full bg-transparent cursor-pointer"
                 >
-                  <PlusCircle />
-                  Add New
+                  ➕📤 Add New
                 </Button>
               </Link>
 
@@ -42,7 +41,7 @@ export default async function SalesPage() {
                   variant="outline"
                   className="w-full bg-transparent cursor-pointer"
                 >
-                  <LayoutDashboardIcon /> Dashboard
+                  📈 Dashboard
                 </Button>
               </Link>
             </div>{" "}

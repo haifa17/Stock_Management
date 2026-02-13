@@ -14,6 +14,8 @@ function transformLotRecord(record: any): Lot {
     origin: fields.Origin,
     condition: fields.Condition,
     productionDate: fields.ProductionDate,
+    expirationDate: fields.ExpirationDate,
+    price: fields.Price,
     qtyReceived: fields.QtyReceived || 0,
     currentStock: fields.CurrentStock || 0,
     totalSold: fields.TotalSold || 0,
@@ -40,8 +42,10 @@ export const lotService = {
         Origin: data.origin,
         Condition: data.condition,
         ProductionDate: data.productionDate,
+        ExpirationDate: data.expirationDate,
+        Price: data.price,
         QtyReceived: data.qtyReceived,
-        Status: data.status || "Active",
+        Status: data.status || "Available",
         ArrivalDate: new Date().toISOString(),
       };
 
@@ -75,7 +79,7 @@ export const lotService = {
     try {
       const records = await airtable(TABLES.LOTS)
         .select({
-          filterByFormula: `{Status} = "Active"`,
+          filterByFormula: `{Status} = "Available"`,
           sort: [{ field: "ArrivalDate", direction: "desc" }],
         })
         .all();

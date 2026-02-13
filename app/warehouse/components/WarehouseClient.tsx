@@ -42,14 +42,19 @@ export default function WarehouseClient({
 
           <div className="flex flex-col md:flex-row items-center gap-2">
             <Link href="/inventory">
-              <Button variant="outline" size="sm">
-                View Inventory
+              <Button className="cursor-pointer" variant="outline" size="sm">
+                📦View Inventory
               </Button>
             </Link>
 
             <Link href="/sales">
-              <Button variant="outline" size="sm">
-                View Sales
+              <Button className="cursor-pointer" variant="outline" size="sm">
+                📤View Sales
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button className="cursor-pointer" variant="outline" size="sm">
+                📈 Dashboard
               </Button>
             </Link>
           </div>

@@ -4,9 +4,21 @@ export type ProductType = "carcass" | "primal" | "cut";
 export type ProductCategory = "Beef" | "Chicken" | "Pork" | "Lamb" | "Other";
 
 // Status Types
-export type InventoryStatus = "Available" | "Reserved" | "Sold" | "Low Stock"|"Returned" |"Damaged";
+// export type InventoryStatus =
+//   | "Available"
+//   | "Reserved"
+//   | "Sold"
+//   | "Low Stock"
+//   | "Returned"
+//   | "Damaged";
 export type OrderStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
-export type BatchStatus = "Active" | "Depleted" | "Expired";
+export type BatchStatus =
+  | "Available" // Lot is in stock and ready for sale
+  | "Sold" // Lot has been completely sold
+  | "Reserved" // Lot is reserved for a specific order
+  | "Damaged" // Lot is damaged and cannot be sold
+  | "Returned" // Lot has been returned by customer
+  | "Low Stock"; // Lot is running low (computed when Available + currentStock < 20)
 
 // User Types
 export type UserRole = "admin" | "warehouseStaff" | "marketer";
@@ -38,11 +50,13 @@ export interface AirtableLotFields {
   Origin: string;
   Condition: string;
   ProductionDate: string;
+  ExpirationDate: string;
   QtyReceived: number; // £
+  Price: number;
   Sales?: string[]; // 🔗 linked records (array of record IDs)
   TotalSold?: number; // 📊 rollup field
   CurrentStock: number; // £ (calculated: QtyReceived - total outbound)
-  Status: BatchStatus; // "Active", "Depleted", "Expired"
+  Status: BatchStatus; 
   Notes?: string;
   VoiceNoteUrl?: string;
   ArrivalDate: string; // Auto-generated timestamp
@@ -64,16 +78,6 @@ export interface AirtableSaleFields {
   ProcessedBy?: string; // User ID
 }
 
-export interface AirtableInventoryFields {
-  [key: string]: any;
-  Name: string;
-  LotId: string;
-  Type: string;
-  Quantity: number;
-  Status: InventoryStatus;
-  ArrivalDate: string;
-  ExpiryDate: string;
-}
 
 export interface AirtableOrderFields {
   [key: string]: any;

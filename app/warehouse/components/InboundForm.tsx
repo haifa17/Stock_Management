@@ -38,6 +38,8 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
     origin: "",
     condition: "",
     productionDate: "",
+    expirationDate: "",
+    price: "",
     qtyReceived: "",
     notes: "",
   });
@@ -122,6 +124,8 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
       formDataToSend.append("origin", formData.origin);
       formDataToSend.append("condition", formData.condition);
       formDataToSend.append("productionDate", formData.productionDate);
+      formDataToSend.append("expirationDate", formData.expirationDate);
+      formDataToSend.append("price", formData.price);
       formDataToSend.append("qtyReceived", formData.qtyReceived);
       formDataToSend.append("notes", formData.notes);
 
@@ -161,6 +165,8 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           origin: "",
           condition: "",
           productionDate: "",
+          expirationDate: "",
+          price: "",
           qtyReceived: "",
           notes: "",
         });
@@ -227,7 +233,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
             variant="outline"
             onClick={handleEmergencyMode}
             disabled={isSubmitting}
-            className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+            className="w-full cursor-pointer border-red-500 text-red-500 hover:bg-amber-50"
           >
             <AlertTriangle className="h-4 w-4 mr-2" />
             Create Emergency Product
@@ -381,7 +387,20 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           disabled={isSubmitting}
         />
       </div>
-
+      {/* Expiration Date */}
+      <div className="space-y-2">
+        <Label htmlFor="expirationDate">Expiration Date</Label>
+        <Input
+          id="expirationDate"
+          type="date"
+          value={formData.expirationDate}
+          onChange={(e) =>
+            setFormData({ ...formData, expirationDate: e.target.value })
+          }
+          required
+          disabled={isSubmitting}
+        />
+      </div>
       {/* Quantity Received (Big Pad) */}
       <div className="space-y-2">
         <Label htmlFor="qtyReceived">Qty Received (£)</Label>
@@ -394,6 +413,21 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
           onChange={(e) =>
             setFormData({ ...formData, qtyReceived: e.target.value })
           }
+          required
+          disabled={isSubmitting}
+          className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
+        />
+      </div>
+      {/* Quantity Received (Big Pad) */}
+      <div className="space-y-2">
+        <Label htmlFor="price">Price ($)</Label>
+        <Input
+          id="price"
+          type="number"
+          step="0.1"
+          placeholder="0"
+          value={formData.price}
+          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
           required
           disabled={isSubmitting}
           className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling

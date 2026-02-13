@@ -23,33 +23,29 @@ export default async function DashboardPage() {
             <LogoutButton />
           </div>
           {/* Header */}
-          <div className="flex justify-between">
-            <h1 className="text-2xl font-bold text-foreground">
-              Admin Dashboard
-            </h1>
-            {/* Navigation */}
-            <div className="flex flex-col md:flex-row gap-2">
-              <Link href="/warehouse">
-                <Button variant="outline" className=" cursor-pointer" size="sm">
-                  Warehouse
-                </Button>
-              </Link>
-              <Link href="/inventory">
-                <Button variant="outline" className=" cursor-pointer" size="sm">
-                  Inventory
-                </Button>
-              </Link>
-              <Link href="/sales">
-                <Button className=" cursor-pointer" variant="outline" size="sm">
-                  Sales
-                </Button>
-              </Link>
-              <Link href="/quickbook">
-                <Button className=" cursor-pointer" size="sm">
-                  Connect to QuickBooks
-                </Button>
-              </Link>
-            </div>
+
+          {/* Navigation */}
+          <div className="flex flex-wrap md:flex-row gap-2">
+            <Link href="/warehouse">
+              <Button variant="outline" className=" cursor-pointer" size="sm">
+                🏪Warehouse
+              </Button>
+            </Link>
+            <Link href="/inventory">
+              <Button variant="outline" className=" cursor-pointer" size="sm">
+                📦Inventory
+              </Button>
+            </Link>
+            <Link href="/sales">
+              <Button className=" cursor-pointer" variant="outline" size="sm">
+                📤Sales
+              </Button>
+            </Link>
+            <Link href="/quickbook">
+              <Button className=" cursor-pointer" size="sm">
+                🔗 Connect to QuickBooks
+              </Button>
+            </Link>
           </div>
 
           {/* Stats Grid */}

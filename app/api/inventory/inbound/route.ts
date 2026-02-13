@@ -27,12 +27,14 @@ export async function POST(request: Request) {
     const product = formData.get("product") as string;
     const lotId = formData.get("lotId") as string;
     const qtyReceived = parseFloat(formData.get("qtyReceived") as string);
+    const price = parseFloat(formData.get("price") as string);
     const provider = formData.get("provider") as string;
     const grade = formData.get("grade") as string;
     const brand = formData.get("brand") as string;
     const origin = formData.get("origin") as string;
     const condition = formData.get("condition") as string;
     const productionDate = formData.get("productionDate") as string;
+    const expirationDate = formData.get("expirationDate") as string;
     const notes = formData.get("notes") as string;
     const voiceNote = formData.get("voiceNote") as File | null;
     const createdBy = formData.get("createdBy") as string;
@@ -41,6 +43,7 @@ export async function POST(request: Request) {
       product,
       lotId,
       qtyReceived,
+      price,
       voiceNoteExists: !!voiceNote,
       voiceNoteSize: voiceNote?.size,
     });
@@ -115,8 +118,10 @@ export async function POST(request: Request) {
       origin: origin,
       condition: condition,
       productionDate: productionDate,
+      expirationDate: expirationDate,
+      price: price,
       qtyReceived: qtyReceived,
-      status: "Active",
+      status: "Available",
       notes: notes || "",
       voiceNoteUrl: voiceNoteUrl || undefined,
       createdBy: createdBy,
@@ -180,14 +185,15 @@ async function sendMarketerNotification(lot: any, voiceNoteUrl: string | null) {
 📦 *Lot ID:* ${lot.lotId}
 🏷️ *Product:* ${lot.product}
 📊 *Quantity:* ${lot.qtyReceived}
+💸 *Price:* ${lot.price}
 👤 *Provider:* ${lot.provider || "N/A"}
 ⭐ *Grade:* ${lot.grade || "N/A"}
 🏭 *Brand:* ${lot.brand || "N/A"}
 🌍 *Origin:* ${lot.origin || "N/A"}
 ✅ *Condition:* ${lot.condition || "N/A"}
 📅 *Production Date:* ${lot.productionDate || "N/A"}
+📅 *Expiration Date:* ${lot.expirationDate || "N/A"}
 📝 *Notes:* ${lot.notes || "None"}
-👤 *Created by:* ${lot.createdBy || "Unknown"}
 ${voiceNoteUrl ? `\n🎤 *Voice Note:* ${voiceNoteUrl}` : ""}
 
 ⏰ ${new Date().toLocaleString()}

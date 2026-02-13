@@ -1,58 +1,35 @@
 import { airtable, TABLES } from "./config";
 import { AirtableLotFields, BatchStatus } from "./airtable-types";
+import { Lot } from "../types";
 
-// Transform lot record to match your existing InventoryItem structure
-function transformLotToInventoryItem(record: any): any {
+function transformLotRecord(record: any): Lot {
   const fields = record.fields as AirtableLotFields;
-  const batchStatus = fields.Status as BatchStatus;
-  let status = mapBatchStatusToInventoryStatus(batchStatus);
-  // Apply low stock condition
-  if (batchStatus === "Active" && fields.CurrentStock < 20) {
-    status = "Low Stock";
-  }
-
   return {
     id: record.id,
     lotId: fields.LotId,
-    name: fields.Product,
-    quantity:  Number(fields.CurrentStock || 0),
-    qtyReceived: Number(fields.QtyReceived || 0),
-    totalSold:Number(fields.TotalSold || 0),
-    status,
-    arrivalDate: fields.ArrivalDate
-      ? new Date(fields.ArrivalDate).toLocaleDateString()
-      : "",
-    expiryDate: fields.ProductionDate
-      ? new Date(fields.ProductionDate).toLocaleDateString()
-      : "",
-    // Additional lot fields
+    product: fields.Product,
     provider: fields.Provider,
     grade: fields.Grade,
     brand: fields.Brand,
     origin: fields.Origin,
     condition: fields.Condition,
+    productionDate: fields.ProductionDate,
+    expirationDate: fields.ExpirationDate,
+    price: fields.Price,
+    qtyReceived: fields.QtyReceived || 0,
+    currentStock: fields.CurrentStock || 0,
+    totalSold: fields.TotalSold || 0,
+    status: fields.Status,
     notes: fields.Notes,
-    voiceNoteUrl:fields.VoiceNoteUrl
+    voiceNoteUrl: fields.VoiceNoteUrl,
+    arrivalDate: fields.ArrivalDate,
+    createdBy: fields.CreatedBy,
   };
 }
 
-// Map BatchStatus to InventoryStatus
-function mapBatchStatusToInventoryStatus(batchStatus: BatchStatus): string {
-  switch (batchStatus) {
-    case "Active":
-      return "Available";
-    case "Depleted":
-      return "Sold";
-    case "Expired":
-      return "Reserved"; // or create a new status
-    default:
-      return "Available";
-  }
-}
-
 export const inventoryService = {
-  // Get all lots as inventory items
-  async getAll(): Promise<any[]> {
+  // Get all lots (inventory)
+  async getAll(): Promise<Lot[]> {
     try {
       const records = await airtable(TABLES.LOTS)
         .select({
@@ -60,7 +37,7 @@ export const inventoryService = {
         })
         .all();
 
-      return records.map(transformLotToInventoryItem);
+      return records.map(transformLotRecord);
     } catch (error) {
       console.error("Error fetching inventory:", error);
       throw error;
@@ -68,10 +45,10 @@ export const inventoryService = {
   },
 
   // Get lot by ID
-  async getById(id: string): Promise<any | null> {
+  async getById(id: string): Promise<Lot | null> {
     try {
       const record = await airtable(TABLES.LOTS).find(id);
-      return transformLotToInventoryItem(record);
+      return transformLotRecord(record);
     } catch (error) {
       console.error("Error fetching item:", error);
       return null;
@@ -79,19 +56,13 @@ export const inventoryService = {
   },
 
   // Update lot status
-  async updateStatus(id: string, status: string): Promise<any> {
+  async updateStatus(id: string, status: BatchStatus): Promise<Lot> {
     try {
-      // Map inventory status back to batch status
-      let batchStatus: BatchStatus = "Active";
-      if (status === "Sold") batchStatus = "Depleted";
-      if (status === "Reserved") batchStatus = "Expired";
-      console.log("Updating Airtable:", id, batchStatus);
-
       const record = await airtable(TABLES.LOTS).update(id, {
-        Status: batchStatus,
+        Status: status,
       });
 
-      return transformLotToInventoryItem(record);
+      return transformLotRecord(record);
     } catch (error) {
       console.error("Error updating status:", error);
       throw error;
@@ -99,21 +70,16 @@ export const inventoryService = {
   },
 
   // Get by status
-  async getByStatus(status: string): Promise<any[]> {
+  async getByStatus(status: BatchStatus): Promise<Lot[]> {
     try {
-      // Map inventory status to batch status
-      let batchStatus: BatchStatus = "Active";
-      if (status === "Sold") batchStatus = "Depleted";
-      if (status === "Reserved") batchStatus = "Expired";
-
       const records = await airtable(TABLES.LOTS)
         .select({
-          filterByFormula: `{Status} = "${batchStatus}"`,
+          filterByFormula: `{Status} = "${status}"`,
           sort: [{ field: "ArrivalDate", direction: "desc" }],
         })
         .all();
 
-      return records.map(transformLotToInventoryItem);
+      return records.map(transformLotRecord);
     } catch (error) {
       console.error("Error filtering by status:", error);
       throw error;
@@ -121,7 +87,7 @@ export const inventoryService = {
   },
 
   // Get low stock lots
-  async getLowStock(threshold: number = 20): Promise<any[]> {
+  async getLowStock(threshold: number = 20): Promise<Lot[]> {
     try {
       const records = await airtable(TABLES.LOTS)
         .select({
@@ -130,7 +96,7 @@ export const inventoryService = {
         })
         .all();
 
-      return records.map(transformLotToInventoryItem);
+      return records.map(transformLotRecord);
     } catch (error) {
       console.error("Error fetching low stock:", error);
       throw error;

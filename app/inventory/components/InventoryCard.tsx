@@ -5,21 +5,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useInventoryStore } from "@/lib/store/inventory-store";
-import { InventoryItem } from "@/lib/types";
 import { toast } from "react-toastify";
-import { InventoryStatus } from "@/lib/airtable/airtable-types";
-import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
+import { BatchStatus } from "@/lib/airtable/airtable-types";
 import axios from "axios";
+import { Lot } from "@/lib/types";
+import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
 
 interface InventoryCardProps {
-  item: InventoryItem;
+  item: Lot;
 }
-
 export function InventoryCard({ item }: InventoryCardProps) {
   const { updateItemStatus } = useInventoryStore();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleUpdateStatus = async (status: InventoryStatus) => {
+  const handleUpdateStatus = async (status: BatchStatus) => {
     setIsUpdating(true);
     try {
       await axios.patch(`/api/inventory/${item.id}`, {
@@ -34,23 +33,34 @@ export function InventoryCard({ item }: InventoryCardProps) {
       setIsUpdating(false);
     }
   };
-  console.log("item", item);
+  const getStatusDisplay = () => {
+    if (item.status === "Available" && item.currentStock < 20) {
+      return (
+        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+          Low Stock
+        </Badge>
+      );
+    }
+    return <Badge className={STATUS_STYLES[item.status]}>{item.status}</Badge>;
+  };
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h3 className="font-semibold text-foreground">{item.name}</h3>
+            <h3 className="font-semibold text-lg text-foreground">
+              {item.product}
+            </h3>
             <p className="text-xs text-muted-foreground font-mono">
               {item.lotId}
             </p>
           </div>
-          <Badge className={STATUS_STYLES[item.status]}>{item.status}</Badge>
+          {getStatusDisplay()}
         </div>
 
         {/* Lot Details */}
         {(item.provider || item.grade || item.brand) && (
-          <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+          <div className="grid grid-cols-4 gap-2 text-sm mb-2">
             {item.provider && (
               <div>
                 <p className="text-muted-foreground">Provider</p>
@@ -69,13 +79,21 @@ export function InventoryCard({ item }: InventoryCardProps) {
                 <p className="font-medium text-foreground">{item.brand}</p>
               </div>
             )}
+            {item.price && (
+              <div>
+                <p className="text-muted-foreground">Price</p>
+                <p className="font-medium text-foreground">
+                  {item.price?.toFixed(2) || "0.00"}$
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         <div className="grid grid-cols-3 gap-2 text-sm mb-3">
           <div>
             <p className="text-muted-foreground">Current</p>
-            <p className="font-medium text-foreground">{item.quantity} £</p>
+            <p className="font-medium text-foreground">{item.currentStock} £</p>
           </div>
           <div>
             <p className="text-muted-foreground">Received</p>
@@ -88,19 +106,29 @@ export function InventoryCard({ item }: InventoryCardProps) {
         </div>
 
         {(item.origin || item.condition) && (
-          <div className="flex gap-2 text-xs text-muted-foreground mb-2">
+          <div className="flex gap-2 text-sm font-semibold text-muted-foreground mb-2">
             {item.origin && <span>Origin: {item.origin}</span>}
             {item.origin && item.condition && <span>•</span>}
             {item.condition && <span>Condition: {item.condition}</span>}
           </div>
         )}
 
-        <div className="flex gap-2 text-xs text-muted-foreground mb-3">
-          <span>Arrival: {item.arrivalDate}</span>
-          {item.expiryDate && (
+        <div className="flex gap-2 text-sm  text-muted-foreground mb-3">
+          <span>
+            Arrival: {new Date(item.arrivalDate).toISOString().split("T")[0]}
+          </span>
+          {item.productionDate && (
             <>
               <span>•</span>
-              <span>Production: {item.expiryDate}</span>
+              <span>Production: {item.productionDate}</span>
+            </>
+          )}
+          {item.expirationDate && (
+            <>
+              <span>•</span>
+              <span className="text-amber-600 font-medium">
+                Expires: {item.expirationDate}
+              </span>
             </>
           )}
         </div>
@@ -124,7 +152,7 @@ export function InventoryCard({ item }: InventoryCardProps) {
           </div>
         )}
         {/* Status Update Buttons */}
-        <div className="flex gap-2 mt-5">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 mt-5">
           {STATUS_OPTIONS.map((status) => (
             <Button
               key={status}

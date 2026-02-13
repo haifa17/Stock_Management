@@ -6,28 +6,16 @@ export const revalidate = 0; // Données en temps réel
 export async function calculateDashboardData() {
   const inventory = await inventoryService.getAll();
 
-  const totalQuantity  = inventory.reduce((sum, item) => sum + item.quantity, 0);
+  const totalQuantity  = inventory.reduce((sum, item) => sum + item.currentStock, 0);
   const availableQuantity  = inventory
     .filter((i) => i.status === "Available")
-    .reduce((sum, item) => sum + item.quantity, 0);
+    .reduce((sum, item) => sum + item.currentStock, 0);
   
   // FIXED: Use weight instead of quantity for consistency
   // Since weight is the actual CurrentStock value
   const lowStock = inventory.filter(
     (item) => item.status === "Available" && item.currentStock < 20
   );
-
-  const stockByType = {
-    carcass: inventory
-      .filter((i) => i.type === "carcass")
-      .reduce((sum, i) => sum + i.quantity, 0),
-    primal: inventory
-      .filter((i) => i.type === "primal")
-      .reduce((sum, i) => sum + i.quantity, 0),
-    cut: inventory
-      .filter((i) => i.type === "cut")
-      .reduce((sum, i) => sum + i.quantity, 0),
-  };
 
   // Get recent inbound (lots created today or in the last 7 days)
   const allLots = await lotService.getAll();
@@ -107,11 +95,6 @@ export async function calculateDashboardData() {
     availableWeight: Math.round(availableQuantity * 100) / 100,
     lowStockCount: lowStock.length,
     lowStockItems: lowStock,
-    stockByType: {
-      carcass: Math.round(stockByType.carcass * 100) / 100,
-      primal: Math.round(stockByType.primal * 100) / 100,
-      cut: Math.round(stockByType.cut * 100) / 100,
-    },
     recentInbound,
     recentOutbound,
     totalInboundToday: Math.round(totalInboundToday * 100) / 100,

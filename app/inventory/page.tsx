@@ -29,8 +29,7 @@ export default async function InventoryPage() {
                   variant="outline"
                   className="w-full bg-transparent cursor-pointer"
                 >
-                  <PlusCircle />
-                  Add New
+                  ➕📦 Add New
                 </Button>
               </Link>
 
@@ -39,7 +38,7 @@ export default async function InventoryPage() {
                   variant="outline"
                   className="w-full bg-transparent cursor-pointer"
                 >
-                  <LayoutDashboardIcon /> Dashboard
+                  📈 Dashboard
                 </Button>
               </Link>
             </div>
