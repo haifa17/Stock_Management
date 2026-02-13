@@ -17,33 +17,83 @@ export function SalesCard({ sale }: SalesCardProps) {
   const handlePrintInvoice = () => {
     const doc = new jsPDF();
     const now = new Date();
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-    doc.setFontSize(18);
+    // ===== FAKE LOGO =====
+    // Draw a colored rectangle as placeholder logo
+    doc.setFillColor(30, 120, 60); // green logo background
+    doc.rect(20, 12, 25, 18, "F");
+
+    // Logo initials
+    doc.setTextColor(255);
+    doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("OUTBOUND INVOICE", 20, 20); // left side
+    doc.text("HF", 32.5, 23, { align: "center" });
 
+    // Reset text color
+    doc.setTextColor(0);
+
+    // ===== COMPANY NAME =====
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("HALAL FARMS", 50, 22);
+
+    // Subtitle
     doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("XPRESTRACK", 190, 20, { align: "right" }); // right side
+    doc.setFont("helvetica", "normal");
+    doc.text("OUTBOUND INVOICE", 50, 30);
 
-    // Date: right side, slightly below XPRESTRACK
+    // ===== DATE (RIGHT SIDE) =====
     doc.setFontSize(10);
-    doc.setFont("normal");
     doc.text(
       `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
-      190,
-      28,
+      pageWidth - 20,
+      22,
       { align: "right" },
     );
-    doc.setFontSize(12);
-    doc.text(`Product: ${sale.product}`, 20, 40);
-    doc.text(`Lot: ${sale.lotId}`, 20, 50);
-    doc.text(`Client: ${sale.client}`, 130, 40);
-    doc.text(`Date: ${new Date(sale.saleDate).toLocaleDateString()}`, 130, 50);
 
-    // Table with jsPDF AutoTable
+    // Divider line
+    doc.setDrawColor(200);
+    doc.line(20, 38, pageWidth - 20, 38);
+
+    // ===== INVOICE INFO =====
+    let infoY = 50;
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Invoice Details", 20, infoY);
+
+    doc.setFont("helvetica", "normal");
+    infoY += 8;
+
+    doc.text(`Product: ${sale.product}`, 20, infoY);
+    infoY += 6;
+    doc.text(`Lot: ${sale.lotId}`, 20, infoY);
+
+    // ===== BILL TO (RIGHT SIDE) =====
+    let rightY = 50;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Bill To", pageWidth - 20, rightY, { align: "right" });
+
+    doc.setFont("helvetica", "normal");
+    rightY += 8;
+
+    doc.text(`Client: ${sale.client}`, pageWidth - 20, rightY, {
+      align: "right",
+    });
+    rightY += 6;
+
+    doc.text(
+      `Sale Date: ${new Date(sale.saleDate).toLocaleDateString()}`,
+      pageWidth - 20,
+      rightY,
+      { align: "right" },
+    );
+
+    // ===== TABLE =====
     autoTable(doc, {
-      startY: 60,
+      startY: 80,
       head: [
         [
           "Description",
@@ -63,23 +113,44 @@ export function SalesCard({ sale }: SalesCardProps) {
         ],
       ],
       theme: "grid",
-      headStyles: { fillColor: [30, 60, 90], textColor: 255 },
-      styles: { fontSize: 12 },
+      headStyles: {
+        fillColor: [30, 120, 60], // green theme
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      styles: { fontSize: 11 },
     });
 
-    // Get Y position of table bottom
+    // ===== TOTAL =====
     // @ts-ignore
-    const finalY = (doc as any).lastAutoTable?.finalY || 60;
+    const finalY = (doc as any).lastAutoTable?.finalY || 80;
 
-    // Add notes below table
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`TOTAL: $${sale.price.toFixed(2)}`, pageWidth - 20, finalY + 15, {
+      align: "right",
+    });
+
+    // ===== NOTES =====
     if (sale.notes) {
       doc.setFontSize(10);
-      doc.text(`Note: ${sale.notes}`, 20, finalY + 10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Note: ${sale.notes}`, 20, finalY + 20);
     }
 
-    // Save PDF
-    doc.save(`Invoice_${sale.lotId}.pdf`);
+    // ===== FOOTER =====
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text("Thank you for your business", pageWidth / 2, 285, {
+      align: "center",
+    });
+
+    doc.setTextColor(0);
+
+    // ===== SAVE =====
+    doc.save(`Outbound_Invoice_${sale.lotId}.pdf`);
   };
+
   return (
     <Card key={sale.id}>
       <CardContent className="p-4">
