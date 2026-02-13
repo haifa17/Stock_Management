@@ -16,10 +16,25 @@ interface SalesCardProps {
 export function SalesCard({ sale }: SalesCardProps) {
   const handlePrintInvoice = () => {
     const doc = new jsPDF();
-    // Title
-    doc.setFontSize(18);
-    doc.text("INVOICE", 105, 20, { align: "center" });
+    const now = new Date();
 
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("OUTBOUND INVOICE", 20, 20); // left side
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("XPRESTRACK", 190, 20, { align: "right" }); // right side
+
+    // Date: right side, slightly below XPRESTRACK
+    doc.setFontSize(10);
+    doc.setFont("normal");
+    doc.text(
+      `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
+      190,
+      28,
+      { align: "right" },
+    );
     doc.setFontSize(12);
     doc.text(`Product: ${sale.product}`, 20, 40);
     doc.text(`Lot: ${sale.lotId}`, 20, 50);
@@ -29,8 +44,16 @@ export function SalesCard({ sale }: SalesCardProps) {
     // Table with jsPDF AutoTable
     autoTable(doc, {
       startY: 60,
-      head: [['Description', 'Weight Out (£)', 'Pieces', 'Unit Price ($)', 'Total ($)']],
-     body: [
+      head: [
+        [
+          "Description",
+          "Weight Out (£)",
+          "Pieces",
+          "Unit Price ($)",
+          "Total ($)",
+        ],
+      ],
+      body: [
         [
           sale.product,
           sale.weightOut.toString(),
@@ -53,15 +76,6 @@ export function SalesCard({ sale }: SalesCardProps) {
       doc.setFontSize(10);
       doc.text(`Note: ${sale.notes}`, 20, finalY + 10);
     }
-
-    // Footer
-    doc.setFontSize(12);
-    doc.text(
-      "Thank you for your business!",
-      105,
-      doc.internal.pageSize.height - 20,
-      { align: "center" },
-    );
 
     // Save PDF
     doc.save(`Invoice_${sale.lotId}.pdf`);
