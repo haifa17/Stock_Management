@@ -4,6 +4,7 @@ import { saleService } from "@/lib/airtable/sale-service";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import twilio from "twilio";
+import { usersService } from "@/lib/airtable/users-service";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -124,22 +125,21 @@ async function sendSaleNotification(
     return;
   }
 
-  // You can notify different people for outbound
-  // Option 1: Notify manager/supervisor
-  const managerPhone = process.env.MANAGER_WHATSAPP_NUMBER;
-  // Option 2: Notify same marketer
-  const marketerPhone = process.env.MARKETER_WHATSAPP_NUMBER;
+  // Get all users who want WhatsApp notifications
+  const recipients = await usersService.getWhatsAppRecipients();
 
   // Choose who to notify (or send to both!)
-  const recipientPhone = managerPhone || marketerPhone;
   const twilioWhatsAppNumber =
     process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+14155238886";
 
-  if (!recipientPhone) {
-    console.warn("⚠️ No recipient phone configured for outbound notifications");
+  if (recipients.length === 0) {
+    console.warn("⚠️ No users configured to receive WhatsApp notifications");
     return;
   }
 
+  console.log(
+    `📱 Sending sale notifications to ${recipients.length} recipient(s)`,
+  );
   console.log("📱 Sending outbound WhatsApp notification for sale:", sale.id);
 
   try {
@@ -179,24 +179,52 @@ ${voiceNoteUrl ? `\n🎤 *Voice Note:* ${voiceNoteUrl}` : ""}
 ⏰ ${new Date().toLocaleString()}
     `.trim();
 
-    // Send WhatsApp message
-    const message = await twilioClient.messages.create({
-      from: twilioWhatsAppNumber,
-      to: recipientPhone.startsWith("whatsapp:")
-        ? recipientPhone
-        : `whatsapp:${recipientPhone}`,
-      body: messageBody,
+    const sendPromises = recipients.map(async (user) => {
+      if (!user.phone) {
+        console.warn(`⚠️ User ${user.email} has no phone number`);
+        return { success: false, user: user.email };
+      }
+      try {
+        const phone = user.phone.startsWith("whatsapp:")
+          ? user.phone
+          : `whatsapp:${user.phone}`;
+
+        const message = await twilioClient.messages.create({
+          from: twilioWhatsAppNumber,
+          to: phone,
+          body: messageBody,
+        });
+
+        console.log(`✓ Notification sent to ${user.email} (${user.phone})`);
+        console.log(`  Message SID: ${message.sid}`);
+        return { success: true, user: user.email, sid: message.sid };
+      } catch (error) {
+        console.error(
+          `✗ Failed to send to ${user.email} (${user.phone}):`,
+          error,
+        );
+        if (error && typeof error === "object" && "code" in error) {
+          console.error("  Twilio Error Code:", error.code);
+        }
+        return { success: false, user: user.email, error };
+      }
     });
 
-    console.log("✓ Outbound WhatsApp notification sent successfully");
-    console.log("Message SID:", message.sid);
+    // Wait for all messages to send
+    const results = await Promise.allSettled(sendPromises);
+    const successCount = results.filter(
+      (r) => r.status === "fulfilled" && r.value.success,
+    ).length;
+    console.log(
+      `✓ Sent ${successCount}/${recipients.length} notifications successfully`,
+    );
 
     // Optional: Send low stock alert if remaining is below threshold
     if (
       updatedLot.currentStock > 0 &&
       updatedLot.currentStock <= originalLot.qtyReceived * 0.2
     ) {
-      await sendLowStockAlert(updatedLot, recipientPhone, twilioWhatsAppNumber);
+      await sendLowStockAlert(updatedLot, recipients, twilioWhatsAppNumber);
     }
   } catch (error) {
     console.error("✗ Failed to send outbound WhatsApp notification:", error);
@@ -209,18 +237,17 @@ ${voiceNoteUrl ? `\n🎤 *Voice Note:* ${voiceNoteUrl}` : ""}
 // Optional: Send low stock alert
 async function sendLowStockAlert(
   lot: any,
-  recipientPhone: string,
+  recipients: any[],
   twilioWhatsAppNumber: string,
 ) {
   if (!twilioClient) return;
 
-  try {
-    const remainingPercentage = (
-      (lot.currentStock / lot.qtyReceived) *
-      100
-    ).toFixed(1);
+  const remainingPercentage = (
+    (lot.currentStock / lot.qtyReceived) *
+    100
+  ).toFixed(1);
 
-    const alertMessage = `
+  const alertMessage = `
 ⚠️ *LOW STOCK ALERT*
 
 📦 *Lot ID:* ${lot.lotId}
@@ -228,16 +255,27 @@ async function sendLowStockAlert(
 📊 *Remaining:* ${lot.currentStock} £ (${remainingPercentage}%)
 
 🔔 This lot is running low. Consider reordering soon!
-    `.trim();
+  `.trim();
 
-    await twilioClient.messages.create({
-      from: twilioWhatsAppNumber,
-      to: recipientPhone,
-      body: alertMessage,
-    });
+  const sendPromises = recipients.map(async (user) => {
+    if (!user.phone) return;
 
-    console.log("✓ Low stock alert sent for lot:", lot.lotId);
-  } catch (error) {
-    console.error("✗ Failed to send low stock alert:", error);
-  }
+    try {
+      const phone = user.phone.startsWith("whatsapp:")
+        ? user.phone
+        : `whatsapp:${user.phone}`;
+
+      await twilioClient.messages.create({
+        from: twilioWhatsAppNumber,
+        to: phone,
+        body: alertMessage,
+      });
+
+      console.log(`✓ Low stock alert sent to ${user.email}`);
+    } catch (error) {
+      console.error(`✗ Failed to send alert to ${user.email}:`, error);
+    }
+  });
+
+  await Promise.allSettled(sendPromises);
 }

@@ -3,14 +3,6 @@
 export type ProductType = "carcass" | "primal" | "cut";
 export type ProductCategory = "Beef" | "Chicken" | "Pork" | "Lamb" | "Other";
 
-// Status Types
-// export type InventoryStatus =
-//   | "Available"
-//   | "Reserved"
-//   | "Sold"
-//   | "Low Stock"
-//   | "Returned"
-//   | "Damaged";
 export type OrderStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 export type BatchStatus =
   | "Available" // Lot is in stock and ready for sale
@@ -89,4 +81,17 @@ export interface AirtableOrderFields {
   Items: string | string[]; // Array de noms de produits
   TotalWeight: number;
   Status: OrderStatus;
+}
+
+export interface AirtableUserFields {
+  Email: string;
+  Password: string;
+  Role: UserRole;
+  Phone?: string;
+  ReceiveWhatsAppNotifications?: boolean;
+  qb_access_token?: string;
+  qb_refresh_token?: string;
+  qb_realm_id?: string;
+  qb_expires_at?: string;
+  qb_connected?: boolean;
 }

@@ -4,6 +4,7 @@ import { productService } from "@/lib/airtable/product-service";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import twilio from "twilio";
+import { usersService } from "@/lib/airtable/users-service";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -204,22 +205,18 @@ async function sendMarketerNotification(
     return;
   }
 
-  const marketerPhone = process.env.MARKETER_WHATSAPP_NUMBER;
+  const recipients = await usersService.getWhatsAppRecipients();
   const twilioWhatsAppNumber =
     process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+14155238886"; // Default sandbox
 
-  if (!marketerPhone) {
-    console.warn(
-      "⚠️ MARKETER_WHATSAPP_NUMBER not configured - skipping notification",
-    );
+  if (recipients.length === 0) {
+    console.warn("⚠️ No users configured to receive WhatsApp notifications");
     return;
   }
 
   console.log("📱 Sending WhatsApp notification for lot:", lot.lotId);
-
-  try {
-    // Format the message
-    const messageBody = `
+  // Format the message
+  const messageBody = `
 🚚 *New Inventory Arrival*
 
 📦 *Lot ID:* ${lot.lotId}
@@ -239,26 +236,46 @@ ${invoiceUrl ? `\n🧾 *Invoice:* ${invoiceUrl}` : ""}
 ⏰ ${new Date().toLocaleString()}
     `.trim();
 
-    // Send WhatsApp message
-    const message = await twilioClient.messages.create({
-      from: twilioWhatsAppNumber,
-      to: marketerPhone.startsWith("whatsapp:")
-        ? marketerPhone
-        : `whatsapp:${marketerPhone}`,
-      body: messageBody,
-    });
-
-    console.log("✓ WhatsApp notification sent successfully");
-    console.log("Message SID:", message.sid);
-    console.log("Status:", message.status);
-  } catch (error) {
-    console.error("✗ Failed to send WhatsApp notification:", error);
-
-    // Log specific Twilio errors
-    if (error && typeof error === "object" && "code" in error) {
-      console.error("Twilio Error Code:", error.code);
+  // Send to all recipients
+  const sendPromises = recipients.map(async (user) => {
+    if (!user.phone) {
+      console.warn(`⚠️ User ${user.email} has no phone number`);
+      return { success: false, user: user.email };
     }
+    try {
+      const phone = user.phone.startsWith("whatsapp:")
+        ? user.phone
+        : `whatsapp:${user.phone}`;
 
-    // Don't throw - we don't want to fail the inbound creation if notification fails
-  }
+      const message = await twilioClient.messages.create({
+        from: twilioWhatsAppNumber,
+        to: phone,
+        body: messageBody,
+      });
+
+      console.log(
+        `✓ Inbound notification sent to ${user.email} (${user.phone})`,
+      );
+      console.log(`  Message SID: ${message.sid}`);
+      return { success: true, user: user.email, sid: message.sid };
+    } catch (error) {
+      console.error(
+        `✗ Failed to send to ${user.email} (${user.phone}):`,
+        error,
+      );
+      if (error && typeof error === "object" && "code" in error) {
+        console.error("  Twilio Error Code:", error.code);
+      }
+      return { success: false, user: user.email, error };
+    }
+  });
+
+  // Wait for all messages to send
+  const results = await Promise.allSettled(sendPromises);
+  const successCount = results.filter(
+    (r) => r.status === "fulfilled" && r.value.success,
+  ).length;
+  console.log(
+    `✓ Sent ${successCount}/${recipients.length} inbound notifications successfully`,
+  );
 }

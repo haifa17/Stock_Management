@@ -26,7 +26,8 @@ export default async function DashboardPage() {
           {/* Header */}
 
           {/* Navigation */}
-          <div className="flex flex-wrap md:flex-row gap-2">
+          <div className="flex justify-between">
+        <div className="flex flex-wrap md:flex-row gap-2">
             <Link href="/warehouse">
               <Button variant="outline" className=" cursor-pointer" size="sm">
                 🏪Warehouse
@@ -47,7 +48,14 @@ export default async function DashboardPage() {
                 🔗 Connect to QuickBooks
               </Button>
             </Link>
+            </div>
+             <Link href="/settings">
+              <Button className=" cursor-pointer" variant="outline" size="sm">
+                ⚙️ Settings
+              </Button>
+            </Link>
           </div>
+  
 
           {/* Stats Grid */}
           <DashboardStats

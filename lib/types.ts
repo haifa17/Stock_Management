@@ -10,6 +10,8 @@ export interface User {
   email: string;
   role: UserRole;
   name?: string;
+  phone?: string; // Add this
+  receiveWhatsAppNotifications?: boolean; // Add this
   qb_access_token?: string;
   qb_refresh_token?: string;
   qb_realm_id?: string;

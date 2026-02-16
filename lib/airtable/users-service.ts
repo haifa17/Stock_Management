@@ -1,18 +1,7 @@
 // lib/airtable/users.ts
 import { User } from "../types";
 import { airtable, TABLES } from "./config";
-import { UserRole } from "./airtable-types";
-
-interface AirtableUserFields {
-  Email: string;
-  Password: string;
-  Role: UserRole;
-  qb_access_token?: string;
-  qb_refresh_token?: string;
-  qb_realm_id?: string;
-  qb_expires_at?: string;
-  qb_connected?: boolean;
-}
+import { AirtableUserFields, UserRole } from "./airtable-types";
 
 // Transformer un enregistrement Airtable en User (sans le mot de passe)
 function transformUserRecord(record: any): User {
@@ -21,6 +10,8 @@ function transformUserRecord(record: any): User {
     id: record.id,
     email: fields.Email,
     role: fields.Role,
+    phone: fields.Phone,
+    receiveWhatsAppNotifications: fields.ReceiveWhatsAppNotifications,
     qb_access_token: fields.qb_access_token,
     qb_refresh_token: fields.qb_refresh_token,
     qb_realm_id: fields.qb_realm_id,
@@ -83,9 +74,34 @@ export const usersService = {
       return null;
     }
   },
+  // Get all users who should receive WhatsApp notifications
+  async getWhatsAppRecipients(): Promise<User[]> {
+    try {
+      const records = await airtable(TABLES.USERS)
+        .select({
+          filterByFormula: `AND(
+            {ReceiveWhatsAppNotifications} = TRUE(),
+            {Phone} != ""
+          )`,
+        })
+        .all();
 
+      return records.map((record) => transformUserRecord(record));
+    } catch (error) {
+      console.error(
+        "Erreur lors de la récupération des destinataires WhatsApp:",
+        error,
+      );
+      return [];
+    }
+  },
   // Créer un nouvel utilisateur
-  async create(email: string, password: string, role: UserRole): Promise<User> {
+  async create(
+    email: string,
+    password: string,
+    role: UserRole,
+    phone?: string,
+  ): Promise<User> {
     try {
       const records = await airtable(TABLES.USERS).create([
         {
@@ -93,12 +109,38 @@ export const usersService = {
             Email: email,
             Password: password,
             Role: role,
+            ...(phone && { Phone: phone }),
+            ReceiveWhatsAppNotifications: false, // Default to false, user must opt-in
           },
         },
       ]);
       return transformUserRecord(records[0]);
     } catch (error) {
       console.error("Erreur lors de la création de l'utilisateur:", error);
+      throw error;
+    }
+  },
+  // Update WhatsApp notification preferences
+  async updateWhatsAppPreferences(
+    userId: string,
+    phone: string,
+    receiveNotifications: boolean,
+  ): Promise<void> {
+    try {
+      await airtable(TABLES.USERS).update([
+        {
+          id: userId,
+          fields: {
+            Phone: phone,
+            ReceiveWhatsAppNotifications: receiveNotifications,
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error(
+        "Erreur lors de la mise à jour des préférences WhatsApp:",
+        error,
+      );
       throw error;
     }
   },
