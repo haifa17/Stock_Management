@@ -120,7 +120,7 @@ export function WeightScanner({
         }
       } catch (err) {
         console.error("Camera error:", err);
-        setError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+        setError("Unable to access the camera. Please check permissions.");
         setIsScanning(false);
       }
     };
@@ -144,7 +144,7 @@ export function WeightScanner({
 
   const captureAndProcessImage = async () => {
     if (!videoRef.current || !canvasRef.current) {
-      setError("Caméra non prête");
+      setError("Camera not ready");
       return;
     }
 
@@ -164,12 +164,17 @@ export function WeightScanner({
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const imageData = canvas.toDataURL("image/png");
+    // Apply image preprocessing
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const processedImageData = preprocessImageForOCR(imageData);
+    context.putImageData(processedImageData, 0, 0);
+
+    const finalImage = canvas.toDataURL("image/png");
 
     try {
-      console.log("Starting OCR...");
+      console.log("Starting OCR with preprocessing...");
 
-      const result = await Tesseract.recognize(imageData, "eng", {
+      const result = await Tesseract.recognize(finalImage, "eng", {
         logger: (m) => {
           if (m.status === "recognizing text") {
             console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
@@ -179,22 +184,46 @@ export function WeightScanner({
 
       const text = result.data.text;
       console.log("OCR Result:", text);
+      console.log("Confidence:", result.data.confidence);
 
       const weightInfo = extractWeight(text);
 
       if (weightInfo) {
-        // Just call the callback - parent handles state
         onWeightDetected?.(weightInfo.weight, weightInfo.unit, text);
         stopScanning();
       } else {
-        setError("Weight not detected. Try centering the label better.");
+        console.log("Failed to extract weight from:", text);
+        setError(`Weight not detected. Try better lighting and positioning.`);
       }
     } catch (err) {
       console.error("OCR Error:", err);
-      setError("Error while reading the image.");
+      setError("Error reading image");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const preprocessImageForOCR = (imageData: ImageData): ImageData => {
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+
+      let adjusted = gray;
+      if (adjusted < 128) {
+        adjusted = adjusted * 0.5;
+      } else {
+        adjusted = 128 + (adjusted - 128) * 1.5;
+      }
+
+      adjusted = Math.min(255, Math.max(0, adjusted));
+
+      data[i] = adjusted;
+      data[i + 1] = adjusted;
+      data[i + 2] = adjusted;
+    }
+
+    return imageData;
   };
 
   const extractWeight = (
