@@ -187,11 +187,11 @@ export function WeightScanner({
         onWeightDetected?.(weightInfo.weight, weightInfo.unit, text);
         stopScanning();
       } else {
-        setError("Poids non détecté. Essayez de mieux centrer l'étiquette.");
+        setError("Weight not detected. Try centering the label better.");
       }
     } catch (err) {
       console.error("OCR Error:", err);
-      setError("Erreur lors de la lecture de l'image");
+      setError("Error while reading the image.");
     } finally {
       setIsProcessing(false);
     }
@@ -294,7 +294,7 @@ export function WeightScanner({
             className="w-full"
             variant="destructive"
           >
-            Arrêter le scan
+            Stop scanning.
           </Button>
         </>
       )}
@@ -316,7 +316,7 @@ export function WeightScanner({
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="border-4 border-green-500 rounded-lg w-4/5 h-2/3 flex items-center justify-center">
                 <span className="text-white bg-black bg-opacity-70 px-4 py-2 rounded text-sm font-medium">
-                  Centrez l'étiquette dans le cadre
+                  Center the label within the frame.
                 </span>
               </div>
             </div>
@@ -331,14 +331,14 @@ export function WeightScanner({
               {isProcessing ? "Traitement en cours..." : "📷 Capturer & Lire"}
             </Button>
             <Button onClick={stopScanning} variant="destructive">
-              Annuler
+              Cancel
             </Button>
           </div>
 
           {isProcessing && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-900 text-center">
-                Analyse de l'image en cours...
+                Image analysis in progress...
               </p>
             </div>
           )}
