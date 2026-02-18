@@ -328,7 +328,7 @@ export function WeightScanner({
               className="flex-1"
               disabled={isProcessing}
             >
-              {isProcessing ? "Traitement en cours..." : "📷 Capturer & Lire"}
+              {isProcessing ? "Processing..." : "📷 Capture & Read"}
             </Button>
             <Button onClick={stopScanning} variant="destructive">
               Cancel
