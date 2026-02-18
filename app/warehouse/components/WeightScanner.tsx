@@ -48,19 +48,26 @@ export function WeightScanner({
           { facingMode: "environment" },
           {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: { width: 300, height: 150 }, // Wider box for barcodes (horizontal)
+            aspectRatio: 2.0, // Horizontal rectangle for barcodes
+            disableFlip: false, // Allow flipping for better detection
           },
-          (decodedText) => {
-            // Just call the callback - parent handles state
+          (decodedText, decodedResult) => {
+            console.log("Scanned code:", decodedText);
+            console.log("Format:", decodedResult.result.format);
+
             onBarcodeScanned?.(decodedText);
             isRunningRef.current = false;
             scanner.stop().catch(() => {});
             setIsScanning(false);
           },
-          () => {},
+          (errorMessage) => {
+            // Suppress frequent scanning errors in console
+          },
         );
 
         isRunningRef.current = true;
+        console.log("✓ Scanner started - supports QR codes and barcodes");
       } catch (err) {
         console.error(err);
         setError("Impossible d'accéder à la caméra");
