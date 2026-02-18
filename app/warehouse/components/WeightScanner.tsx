@@ -45,10 +45,12 @@ export function WeightScanner({
         scannerRef.current = scanner;
 
         await scanner.start(
-          { facingMode: "environment" },
+          {
+            facingMode: "environment",
+          },
           {
             fps: 30,
-            qrbox: { width: 300, height: 80 }, // Wider box for barcodes (horizontal)
+            qrbox: { width: 400, height: 200 }, // Wider box for barcodes (horizontal)
             aspectRatio: 2.0, // Horizontal rectangle for barcodes
             disableFlip: false, // Allow flipping for better detection
           },
