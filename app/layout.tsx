@@ -9,7 +9,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "XpresTrack – MVP",
+  title: "Halal Farms",
   description: "Meat inventory tracking for warehouse staff and managers",
   generator: "Visioad",
   icons: {

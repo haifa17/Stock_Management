@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { toast } from "react-toastify";
-import { AlertTriangle, Camera, Upload, X } from "lucide-react";
+import { AlertTriangle,  Upload, X } from "lucide-react";
 import { Product } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { VoiceRecorder } from "./Voicerecorder";
@@ -16,9 +16,14 @@ import axios from "axios";
 interface InboundFormProps {
   scannedProduct?: string;
   products?: Product[];
+  detectedWeight?: { weight: number; unit: string } | null;
 }
 
-export function InboundForm({ scannedProduct, products }: InboundFormProps) {
+export function InboundForm({
+  scannedProduct,
+  products,
+  detectedWeight,
+}: InboundFormProps) {
   const router = useRouter();
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const selectedProduct =
@@ -48,7 +53,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
   const [lotId, setLotId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
+  const [weightAutoFilled, setWeightAutoFilled] = useState(false);
   useEffect(() => {
     if (selectedProduct) {
       const timestamp = Date.now();
@@ -79,6 +84,31 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
       }
     }
   }, [scannedProduct, products]);
+
+  // NEW: Handle detected weight from OCR scanner
+  useEffect(() => {
+    if (detectedWeight) {
+      // Convert to pounds if needed (assuming your system uses LBS)
+      let weightInLbs = detectedWeight.weight;
+
+      if (detectedWeight.unit === "KG" || detectedWeight.unit === "KGSS") {
+        weightInLbs = detectedWeight.weight * 2.20462; // Convert KG to LBS
+        toast.success(
+          `Weight detected: ${detectedWeight.weight} ${detectedWeight.unit} (converted to ${weightInLbs.toFixed(2)} LBS)`,
+        );
+      } else {
+        toast.success(
+          `Weight detected: ${detectedWeight.weight} ${detectedWeight.unit}`,
+        );
+      }
+      // Auto-fill the quantity field
+      setFormData((prev) => ({
+        ...prev,
+        qtyReceived: weightInLbs.toFixed(2),
+      }));
+      setWeightAutoFilled(true);
+    }
+  }, [detectedWeight]);
 
   // Manual trigger for emergency product
   const handleEmergencyMode = () => {
@@ -226,6 +256,7 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
         setInvoiceFile(null);
         setInvoicePreview(null);
         setLotId("");
+        setWeightAutoFilled(false);
       }, 2000);
     } catch (error: any) {
       console.error("Error:", error);
@@ -457,19 +488,30 @@ export function InboundForm({ scannedProduct, products }: InboundFormProps) {
       </div>
       {/* Quantity Received (Big Pad) */}
       <div className="space-y-2">
-        <Label htmlFor="qtyReceived">Qty Received (£)</Label>
+        <Label htmlFor="qtyReceived" className="flex items-center gap-2">
+          Qty Received (£)
+          {weightAutoFilled && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full animate-pulse">
+              ⚖️ Auto-filled from scanner
+            </span>
+          )}
+        </Label>
         <Input
           id="qtyReceived"
           type="number"
-          step="0.1"
+          step="0.01"
+          min="0"
           placeholder="0"
           value={formData.qtyReceived}
-          onChange={(e) =>
-            setFormData({ ...formData, qtyReceived: e.target.value })
-          }
+          onChange={(e) => {
+            setFormData({ ...formData, qtyReceived: e.target.value });
+            setWeightAutoFilled(false); // Remove indicator if user manually edits
+          }}
           required
           disabled={isSubmitting}
-          className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
+          className={`text-2xl py-6 placeholder:text-base ${
+            weightAutoFilled ? "border-green-500 bg-green-50" : ""
+          }`}
         />
       </div>
       {/* price */}

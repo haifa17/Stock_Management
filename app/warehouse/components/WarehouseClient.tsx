@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LogoutButton from "@/components/buttons/LogoutButton";
-import { BarcodeScanner } from "./BarcodeScanner";
 import { OutboundForm } from "./OutboundForm";
 import { InboundForm } from "./InboundForm";
 import { Lot, Product } from "@/lib/types";
+import { WeightScanner } from "./WeightScanner";
 
 interface Props {
   initialTab: "inbound" | "outbound";
@@ -26,7 +26,10 @@ export default function WarehouseClient({
     initialTab,
   );
   const [scannedCode, setScannedCode] = useState("");
-
+  const [detectedWeight, setDetectedWeight] = useState<{
+    weight: number;
+    unit: string;
+  } | null>(null);
   return (
     <main className="min-h-screen bg-muted p-4">
       <div className="max-w-3xl mx-auto space-y-4">
@@ -64,11 +67,59 @@ export default function WarehouseClient({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              Scan {activeTab === "inbound" ? "Product" : "Lot/Batch"}
+              Scanner -{" "}
+              {activeTab === "inbound" ? "Product & Weight" : "Batch & Weight"}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarcodeScanner onScan={setScannedCode} />
+            <WeightScanner
+              onBarcodeScanned={(code) => {
+                console.log("Barcode scanned:", code);
+                setScannedCode(code);
+              }}
+              onWeightDetected={(weight, unit, fullText) => {
+                console.log("Weight detected:", weight, unit);
+                console.log("Full OCR text:", fullText);
+                setDetectedWeight({ weight, unit });
+              }}
+            />
+
+            {/* Display scanned information */}
+            {(scannedCode || detectedWeight) && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                {scannedCode && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-900 font-medium">
+                      Scanned Code:
+                    </span>
+                    <span className="text-sm font-mono text-blue-700">
+                      {scannedCode}
+                    </span>
+                  </div>
+                )}
+                {detectedWeight && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-900 font-medium">
+                      Detected Weight:
+                    </span>
+                    <span className="text-sm font-mono text-blue-700">
+                      {detectedWeight.weight} {detectedWeight.unit}
+                    </span>
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    setScannedCode("");
+                    setDetectedWeight(null);
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -92,11 +143,19 @@ export default function WarehouseClient({
               </TabsList>
 
               <TabsContent value="inbound">
-                <InboundForm scannedProduct={scannedCode} products={products} />
+                <InboundForm
+                  scannedProduct={scannedCode}
+                  products={products}
+                  detectedWeight={detectedWeight}
+                />
               </TabsContent>
 
               <TabsContent value="outbound">
-                <OutboundForm scannedBatch={scannedCode} batches={batches} />
+                <OutboundForm
+                  scannedBatch={scannedCode}
+                  batches={batches}
+                  detectedWeight={detectedWeight}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>

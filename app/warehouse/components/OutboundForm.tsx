@@ -15,9 +15,14 @@ import axios from "axios";
 interface OutboundFormProps {
   scannedBatch?: string;
   batches: Lot[];
+  detectedWeight?: { weight: number; unit: string } | null;
 }
 
-export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
+export function OutboundForm({
+  scannedBatch,
+  batches,
+  detectedWeight,
+}: OutboundFormProps) {
   const router = useRouter();
   const [selectedBatch, setSelectedBatch] = useState<Lot | null>(null);
   const [weightOut, setWeightOut] = useState("");
@@ -28,6 +33,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [voiceNote, setVoiceNote] = useState<Blob | null>(null);
+  const [weightAutoFilled, setWeightAutoFilled] = useState(false);
 
   // Set default selected batch on mount
   useEffect(() => {
@@ -48,7 +54,34 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
       }
     }
   }, [scannedBatch, batches]);
+  useEffect(() => {
+    if (detectedWeight) {
+      // Convert to pounds if needed (assuming your system uses LBS)
+      let weightInLbs = detectedWeight.weight;
 
+      if (detectedWeight.unit === "KG" || detectedWeight.unit === "KGSS") {
+        weightInLbs = detectedWeight.weight * 2.20462; // Convert KG to LBS
+        toast.success(
+          `Weight detected: ${detectedWeight.weight} ${detectedWeight.unit} (converted to ${weightInLbs.toFixed(2)} LBS)`,
+        );
+      } else {
+        toast.success(
+          `Weight detected: ${detectedWeight.weight} ${detectedWeight.unit}`,
+        );
+      }
+
+      // Check if weight exceeds available stock
+      if (selectedBatch && weightInLbs > selectedBatch.currentStock) {
+        toast.warning(
+          `Detected weight (${weightInLbs.toFixed(2)} £) exceeds available stock (${selectedBatch.currentStock} £)`,
+        );
+      }
+
+      // Auto-fill the weightOut field
+      setWeightOut(weightInLbs.toFixed(2));
+      setWeightAutoFilled(true);
+    }
+  }, [detectedWeight, selectedBatch]);
   const handleVoiceRecording = (blob: Blob) => {
     setVoiceNote(blob.size > 0 ? blob : null);
   };
@@ -108,6 +141,7 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
         setClient("");
         setPrice("");
         setVoiceNote(null);
+        setWeightAutoFilled(false);
       }, 2000);
     } catch (error: any) {
       console.error("Error:", error);
@@ -161,21 +195,33 @@ export function OutboundForm({ scannedBatch, batches }: OutboundFormProps) {
 
       {/* Catch Weight Entry */}
       <div className="space-y-2">
-        <Label htmlFor="weightOut">Weight Out (£)</Label>
+        <Label htmlFor="weightOut" className="flex items-center gap-2">
+          Weight Out (£)
+          {weightAutoFilled && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full animate-pulse">
+              ⚖️ Auto-filled from scanner
+            </span>
+          )}
+        </Label>
         <Input
           id="weightOut"
           type="number"
-          step="0.1"
-          placeholder="0.0"
+          step="0.01"
           min="0"
+          placeholder="0"
+          max={selectedBatch?.currentStock}
           value={weightOut}
-          onChange={(e) => setWeightOut(e.target.value)}
+          onChange={(e) => {
+            setWeightOut(e.target.value);
+            setWeightAutoFilled(false);
+          }}
           required
           disabled={isSubmitting}
-          className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
+          className={`text-2xl py-6 placeholder:text-base ${
+            weightAutoFilled ? "border-green-500 bg-green-50" : ""
+          }`}
         />
       </div>
-
       {/* Pieces */}
       <div className="space-y-2">
         <Label htmlFor="pieces">Pieces</Label>
