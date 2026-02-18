@@ -48,7 +48,7 @@ export function WeightScanner({
           { facingMode: "environment" },
           {
             fps: 10,
-            qrbox: { width: 300, height: 150 }, // Wider box for barcodes (horizontal)
+            qrbox: { width: 300, height: 80 }, // Wider box for barcodes (horizontal)
             aspectRatio: 2.0, // Horizontal rectangle for barcodes
             disableFlip: false, // Allow flipping for better detection
           },
