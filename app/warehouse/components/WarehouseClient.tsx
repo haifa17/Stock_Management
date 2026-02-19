@@ -11,6 +11,17 @@ import { InboundForm } from "./InboundForm";
 import { Lot, Product } from "@/lib/types";
 import { WeightScanner } from "./WeightScanner";
 
+interface WeightEntry {
+  weight: number;
+  unit: string;
+}
+
+interface DetectedWeight {
+  entries: WeightEntry[]; // individual scanned weights
+  total: number; // sum
+  unit: string; // dominant unit
+}
+
 interface Props {
   initialTab: "inbound" | "outbound";
   batches: Lot[];
@@ -26,10 +37,10 @@ export default function WarehouseClient({
     initialTab,
   );
   const [scannedCode, setScannedCode] = useState("");
-  const [detectedWeight, setDetectedWeight] = useState<{
-    weight: number;
-    unit: string;
-  } | null>(null);
+  const [detectedWeight, setDetectedWeight] = useState<DetectedWeight | null>(
+    null,
+  );
+
   return (
     <main className="min-h-screen bg-muted p-4">
       <div className="max-w-3xl mx-auto space-y-4">
@@ -38,18 +49,16 @@ export default function WarehouseClient({
         </div>
 
         {/* Header */}
-        <div className="flex  justify-between">
+        <div className="flex justify-between">
           <h1 className="text-2xl font-bold text-foreground">
             Warehouse Entry
           </h1>
-
           <div className="flex flex-col md:flex-row items-center gap-2">
             <Link href="/inventory">
               <Button className="cursor-pointer" variant="outline" size="sm">
                 📦View Inventory
               </Button>
             </Link>
-
             <Link href="/sales">
               <Button className="cursor-pointer" variant="outline" size="sm">
                 📤View Sales
@@ -63,11 +72,11 @@ export default function WarehouseClient({
           </div>
         </div>
 
-        {/* Barcode Scanner */}
+        {/* Scanner Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              Scanner -{" "}
+              Scanner —{" "}
               {activeTab === "inbound" ? "Product & Weight" : "Batch & Weight"}
             </CardTitle>
           </CardHeader>
@@ -77,10 +86,9 @@ export default function WarehouseClient({
                 console.log("Barcode scanned:", code);
                 setScannedCode(code);
               }}
-              onWeightDetected={(weight, unit, fullText) => {
-                console.log("Weight detected:", weight, unit);
-                console.log("Full OCR text:", fullText);
-                setDetectedWeight({ weight, unit });
+              onWeightDetected={(weights, total, unit) => {
+                console.log("Weight detected:", weights, total, unit);
+                setDetectedWeight({ entries: weights, total, unit });
               }}
             />
 
@@ -97,16 +105,37 @@ export default function WarehouseClient({
                     </span>
                   </div>
                 )}
+
                 {detectedWeight && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-blue-900 font-medium">
-                      Detected Weight:
-                    </span>
-                    <span className="text-sm font-mono text-blue-700">
-                      {detectedWeight.weight} {detectedWeight.unit}
-                    </span>
+                  <div className="space-y-1">
+                    {/* Individual weights */}
+                    {detectedWeight.entries.map((e, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-sm text-blue-900 font-medium">
+                          Weight #{i + 1}:
+                        </span>
+                        <span className="text-sm font-mono text-blue-700">
+                          {e.weight} {e.unit}
+                        </span>
+                      </div>
+                    ))}
+                    {/* Total (only show if more than one entry) */}
+                    {detectedWeight.entries.length > 1 && (
+                      <div className="flex items-center justify-between border-t border-blue-200 pt-1 mt-1">
+                        <span className="text-sm text-blue-900 font-semibold">
+                          Total:
+                        </span>
+                        <span className="text-sm font-mono font-bold text-blue-800">
+                          {detectedWeight.total} {detectedWeight.unit}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -128,7 +157,6 @@ export default function WarehouseClient({
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Product Details</CardTitle>
           </CardHeader>
-
           <CardContent>
             <Tabs
               value={activeTab}
@@ -146,7 +174,14 @@ export default function WarehouseClient({
                 <InboundForm
                   scannedProduct={scannedCode}
                   products={products}
-                  detectedWeight={detectedWeight}
+                  detectedWeight={
+                    detectedWeight
+                      ? {
+                          weight: detectedWeight.total,
+                          unit: detectedWeight.unit,
+                        }
+                      : null
+                  }
                 />
               </TabsContent>
 
@@ -154,7 +189,14 @@ export default function WarehouseClient({
                 <OutboundForm
                   scannedBatch={scannedCode}
                   batches={batches}
-                  detectedWeight={detectedWeight}
+                  detectedWeight={
+                    detectedWeight
+                      ? {
+                          weight: detectedWeight.total,
+                          unit: detectedWeight.unit,
+                        }
+                      : null
+                  }
                 />
               </TabsContent>
             </Tabs>
