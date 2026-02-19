@@ -24,9 +24,11 @@ export function WeightScanner({
   const [error, setError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+
   // NEW: Track multiple scanned weights
   const [scannedWeights, setScannedWeights] = useState<ScannedWeight[]>([]);
   const [totalWeight, setTotalWeight] = useState(0);
+
   const scannerRef = useRef<any>(null);
   const isRunningRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -36,11 +38,7 @@ export function WeightScanner({
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  useEffect(() => {
-    window.onerror = function (message, source, lineno, colno, error) {
-      alert(`CRASH:\n${message}\nLine: ${lineno}:${colno}`);
-    };
-  }, []);
+
   // NEW: Calculate total weight whenever scannedWeights changes
   useEffect(() => {
     if (scannedWeights.length > 0) {
@@ -56,15 +54,11 @@ export function WeightScanner({
       setTotalWeight(total);
 
       // Send total to parent component
-      try {
-        onWeightDetected?.(
-          total,
-          "LBS",
-          `Total of ${scannedWeights.length} weights`,
-        );
-      } catch (err: any) {
-        window.alert("PARENT CRASHED:\n" + (err?.message || err));
-      }
+      onWeightDetected?.(
+        total,
+        "LBS",
+        `Total of ${scannedWeights.length} weights`,
+      );
     } else {
       setTotalWeight(0);
     }
@@ -86,38 +80,35 @@ export function WeightScanner({
         scannerRef.current = scanner;
 
         await scanner.start(
-          {
-            facingMode: "environment",
-          },
+          { facingMode: "environment" },
           {
             fps: 30,
-            qrbox: { width: 400, height: 200 }, // Wider box for barcodes (horizontal)
-            aspectRatio: 2.0, // Horizontal rectangle for barcodes
-            disableFlip: false, // Allow flipping for better detection
+            qrbox: { width: 400, height: 200 },
+            aspectRatio: 2.0,
+            disableFlip: false,
           },
           (decodedText, decodedResult) => {
             console.log("Scanned code:", decodedText);
-            console.log("Format:", decodedResult.result.format);
             console.log(
               "Format:",
               decodedResult.result.format?.formatName || "Unknown",
             );
-            console.log("Length:", decodedText.length);
+
             onBarcodeScanned?.(decodedText);
             isRunningRef.current = false;
             scanner.stop().catch(() => {});
             setIsScanning(false);
           },
           (errorMessage) => {
-            // Suppress frequent scanning errors in console
+            // Suppress errors
           },
         );
 
         isRunningRef.current = true;
-        console.log("✓ Scanner started - supports QR codes and barcodes");
+        console.log("✓ Barcode scanner started");
       } catch (err) {
         console.error(err);
-        setError("Impossible d'accéder à la caméra");
+        setError("Unable to access camera");
         setIsScanning(false);
         isRunningRef.current = false;
       }
@@ -136,7 +127,7 @@ export function WeightScanner({
     };
   }, [isScanning, isMounted, scanMode, onBarcodeScanned]);
 
-  // Weight scanning effect - START CAMERA
+  // Weight scanning effect
   useEffect(() => {
     if (!isScanning || !isMounted || scanMode !== "weight") return;
 
@@ -188,11 +179,9 @@ export function WeightScanner({
       }
     };
   }, [isScanning, isMounted, scanMode]);
-
   const captureAndProcessImage = async () => {
     if (!videoRef.current || !canvasRef.current) {
       setError("Camera not ready");
-      window.alert("ERROR: Camera not ready");
       return;
     }
 
@@ -204,7 +193,6 @@ export function WeightScanner({
     const context = canvas.getContext("2d");
 
     if (!context) {
-      window.alert("ERROR: Canvas context not available");
       setIsProcessing(false);
       return;
     }
@@ -224,15 +212,13 @@ export function WeightScanner({
 
       // BETTER ERROR HANDLING - Check if Tesseract is available
       if (typeof Tesseract === "undefined") {
-        window.alert("Tesseract library failed to load");
         throw new Error("Tesseract library failed to load");
       }
 
       const result = await Tesseract.recognize(finalImage, "eng", {
         logger: (m) => {
           if (m.status === "recognizing text") {
-            const progress = Math.round(m.progress * 100);
-            window.alert(`OCR Progress: ${progress}%`);
+            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
           }
         },
         // Specify worker path explicitly for production
@@ -243,7 +229,6 @@ export function WeightScanner({
 
       const text = result.data.text;
       console.log("OCR Result:", text);
-      window.alert("OCR Result:\n" + text);
 
       const weightInfo = extractWeight(text);
 
@@ -255,23 +240,15 @@ export function WeightScanner({
           timestamp: Date.now(),
         };
 
-        setScannedWeights((prev) => {
-          if (!Array.isArray(prev)) {
-            window.alert("scannedWeights was not array!");
-            return [newWeight];
-          }
-          return [...prev, newWeight];
-        });
+        setScannedWeights((prev) => [...prev, newWeight]);
         setError("");
-        console.log(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
         window.alert(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
       } else {
         window.alert("Failed to extract weight from:\n" + text);
-        console.log("Failed to extract weight from:", text);
         setError(`Weight not detected. Try better lighting and positioning.`);
       }
     } catch (err: any) {
-      window.alert("OCR FAILED:\n" + (err?.message || err));
+      console.error("OCR Error:", err);
       setError(
         `OCR failed: ${err.message}. Please try manual entry or better lighting.`,
       );
@@ -398,7 +375,7 @@ export function WeightScanner({
             variant="secondary"
             className="w-full"
           >
-            <Barcode /> BarCode
+            <Barcode className="mr-2 h-4 w-4" /> Barcode
           </Button>
           <Button
             onClick={() => {
@@ -410,10 +387,11 @@ export function WeightScanner({
             variant="secondary"
             className="w-full"
           >
-            <Scale /> Weight (OCR)
+            <Scale className="mr-2 h-4 w-4" /> Weight (OCR)
           </Button>
         </div>
       )}
+
       {/* NEW: Display scanned weights summary (always visible) */}
       {scannedWeights.length > 0 && !isScanning && (
         <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
@@ -486,12 +464,12 @@ export function WeightScanner({
             className="w-full"
             variant="destructive"
           >
-            Stop scanning.
+            Stop Scanning
           </Button>
         </>
       )}
 
-      {/* Weight Scanner View */}
+      {/* Weight Scanner View - ENHANCED */}
       {isScanning && scanMode === "weight" && (
         <div className="space-y-3">
           {/* Current scan count */}
