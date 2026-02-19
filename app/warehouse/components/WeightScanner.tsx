@@ -50,29 +50,51 @@ export function WeightScanner({
     setIsMounted(true);
   }, []);
 
-  // ── Barcode scanning ──
+  // ── Barcode scanner ───────────────────────────────────────────────────────
   useEffect(() => {
     if (!isScanning || !isMounted || scanMode !== "barcode") return;
     let isCancelled = false;
 
     const startScanner = async () => {
       try {
-        const { Html5Qrcode } = await import("html5-qrcode");
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } =
+          await import("html5-qrcode");
         if (isCancelled) return;
 
-        const scanner = new Html5Qrcode("qr-reader");
+        // ✅ formatsToSupport goes in the CONSTRUCTOR, not in start()
+        const scanner = new Html5Qrcode("qr-reader", {
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128, // GS1-128 uses this
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.CODE_93,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.RSS_14,
+            Html5QrcodeSupportedFormats.RSS_EXPANDED,
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.DATA_MATRIX,
+            Html5QrcodeSupportedFormats.PDF_417,
+          ],
+          verbose: false,
+        });
+
         scannerRef.current = scanner;
 
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 30,
-            qrbox: { width: 400, height: 200 },
-            aspectRatio: 2.0,
+            fps: 10,
+            qrbox: { width: 320, height: 120 },
+            aspectRatio: 1.7,
             disableFlip: false,
           },
-          (decodedText: string) => {
-            log(`Barcode: ${decodedText}`);
+          (decodedText: string, decodedResult: any) => {
+            const format =
+              decodedResult?.result?.format?.formatName ?? "unknown";
+            log(`✅ Scanned [${format}]: ${decodedText}`);
             try {
               onBarcodeScanned?.(decodedText);
             } catch (e) {
@@ -82,12 +104,13 @@ export function WeightScanner({
             scanner.stop().catch(() => {});
             setIsScanning(false);
           },
-          () => {},
+          () => {}, // suppress per-frame errors
         );
 
         isRunningRef.current = true;
+        log("Barcode scanner started (Code128/GS1-128 mode)");
       } catch (err) {
-        log(`Barcode camera error: ${err}`);
+        log(`Scanner start error: ${err}`);
         setError("Cannot access camera");
         setIsScanning(false);
         isRunningRef.current = false;
@@ -359,8 +382,7 @@ export function WeightScanner({
               setError("");
               setIsScanning(true);
             }}
-            variant="secondary"
-            className="w-full"
+            className="w-full cursor-pointer"
           >
             <Barcode /> BarCode
           </Button>
@@ -373,7 +395,7 @@ export function WeightScanner({
               setIsScanning(true);
             }}
             variant="secondary"
-            className="w-full"
+            className="w-full cursor-pointer"
           >
             <Scale /> Weight (OCR)
           </Button>
@@ -382,7 +404,14 @@ export function WeightScanner({
 
       {/* Barcode view */}
       {isScanning && scanMode === "barcode" && (
-        <>
+        <div className="space-y-3">
+          {/* Tip for GS1-128 labels */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
+            <p className="text-xs text-amber-800 text-center font-medium">
+              📦 For long GS1-128 barcodes: hold phone <strong>10–15 cm</strong>{" "}
+              away, keep barcode horizontal and fully inside the frame
+            </p>
+          </div>
           <div
             id="qr-reader"
             className="w-full rounded-lg overflow-hidden min-h-[300px] bg-black"
@@ -392,9 +421,9 @@ export function WeightScanner({
             className="w-full"
             variant="destructive"
           >
-            Stop scanning.
+            Stop scanning
           </Button>
-        </>
+        </div>
       )}
 
       {/* Weight view */}
