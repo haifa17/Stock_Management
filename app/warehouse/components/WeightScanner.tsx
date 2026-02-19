@@ -503,47 +503,6 @@ export function WeightScanner({
 
   return (
     <div className="space-y-3">
-      {/* Crash log */}
-      {logLines.length > 0 && (
-        <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-yellow-800">
-              🪲 Debug ({logLines.length})
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowLog((v) => !v)}
-                className="text-xs text-yellow-700 underline"
-              >
-                {showLog ? "Hide" : "Show"}
-              </button>
-              <button
-                onClick={() => {
-                  clearCrashLog();
-                  setLogLines([]);
-                  setShowLog(false);
-                }}
-                className="text-xs text-red-500 underline"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-          {showLog && (
-            <div className="mt-2 max-h-64 overflow-y-auto bg-gray-900 rounded p-2">
-              {logLines.map((line, i) => (
-                <p
-                  key={i}
-                  className="text-xs font-mono text-green-400 break-all"
-                >
-                  {line}
-                </p>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Mode buttons */}
       {!isScanning && (
         <div className="grid grid-cols-2 gap-2">
@@ -553,8 +512,7 @@ export function WeightScanner({
               setError("");
               setIsScanning(true);
             }}
-            variant="secondary"
-            className="w-full"
+            className="w-full cursor-pointer"
           >
             <Barcode className="mr-2" /> BarCode
           </Button>
@@ -567,7 +525,7 @@ export function WeightScanner({
               setIsScanning(true);
             }}
             variant="secondary"
-            className="w-full"
+            className="w-full cursor-pointer"
           >
             <Scale className="mr-2" /> Weight (OCR)
           </Button>

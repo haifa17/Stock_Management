@@ -288,9 +288,7 @@ export function InboundForm({
           <p className="text-sm text-amber-800 font-medium">
             ⚠️ Emergency Product Creation
           </p>
-          {/* <p className="text-xs text-amber-600 mt-1">
-            Admin will be notified about this new product
-          </p> */}
+
         </div>
       )}
 
@@ -325,7 +323,7 @@ export function InboundForm({
           </Button>
         </>
       ) : (
-        <div className="grid grid-cols-4 gap-2 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 items-center">
           <div className="space-y-2">
             <Label htmlFor="emergencyName">Product Name</Label>
             <Input
