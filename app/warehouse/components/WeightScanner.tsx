@@ -180,41 +180,10 @@ export function WeightScanner({
   ): Promise<{ weight: number; unit: string } | null> => {
     log("Sending image to Claude Vision API...");
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("/api/read-weight", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 256,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: "image/jpeg",
-                  data: base64Image,
-                },
-              },
-              {
-                type: "text",
-                text: `Look at this shipping/product label image. Find the weight value on it.
-Reply with ONLY a JSON object in this exact format, nothing else:
-{"weight": 12.5, "unit": "LBS"}
-or
-{"weight": 5.2, "unit": "KG"}
-
-If you cannot find a weight, reply with:
-{"weight": null, "unit": null, "error": "reason"}
-
-Units must be either "LBS" or "KG". Do not include any explanation.`,
-              },
-            ],
-          },
-        ],
-      }),
+      body: JSON.stringify({ base64Image }),
     });
 
     if (!response.ok) {
