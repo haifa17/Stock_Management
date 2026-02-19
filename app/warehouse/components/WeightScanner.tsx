@@ -11,7 +11,11 @@ interface WeightEntry {
 }
 
 interface WeightScannerProps {
-  onWeightDetected?: (weights: WeightEntry[], total: number, unit: string) => void;
+  onWeightDetected?: (
+    weights: WeightEntry[],
+    total: number,
+    unit: string,
+  ) => void;
   onBarcodeScanned?: (code: string) => void;
 }
 
@@ -38,7 +42,7 @@ export function WeightScanner({
   const log = (msg: string) => {
     console.log(msg);
     setDebugLog((prev) =>
-      [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 30)
+      [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 30),
     );
   };
 
@@ -61,10 +65,19 @@ export function WeightScanner({
 
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 30, qrbox: { width: 400, height: 200 }, aspectRatio: 2.0, disableFlip: false },
+          {
+            fps: 30,
+            qrbox: { width: 400, height: 200 },
+            aspectRatio: 2.0,
+            disableFlip: false,
+          },
           (decodedText: string) => {
             log(`Barcode: ${decodedText}`);
-            try { onBarcodeScanned?.(decodedText); } catch (e) { log(`onBarcodeScanned error: ${e}`); }
+            try {
+              onBarcodeScanned?.(decodedText);
+            } catch (e) {
+              log(`onBarcodeScanned error: ${e}`);
+            }
             isRunningRef.current = false;
             scanner.stop().catch(() => {});
             setIsScanning(false);
@@ -100,9 +113,16 @@ export function WeightScanner({
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
         });
-        if (isCancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+        if (isCancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
@@ -120,7 +140,10 @@ export function WeightScanner({
     return () => {
       isCancelled = true;
       clearTimeout(timeout);
-      if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
       if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [isScanning, isMounted, scanMode]);
@@ -129,7 +152,8 @@ export function WeightScanner({
   const captureAndProcessImage = async () => {
     try {
       if (!videoRef.current || !canvasRef.current) {
-        setError("Camera not ready"); return;
+        setError("Camera not ready");
+        return;
       }
 
       setIsProcessing(true);
@@ -140,7 +164,11 @@ export function WeightScanner({
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
-      if (!context) { log("No canvas context"); setIsProcessing(false); return; }
+      if (!context) {
+        log("No canvas context");
+        setIsProcessing(false);
+        return;
+      }
 
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
@@ -148,15 +176,25 @@ export function WeightScanner({
       log(`Frame: ${canvas.width}x${canvas.height}`);
 
       try {
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
         context.putImageData(preprocessImageForOCR(imageData), 0, 0);
-      } catch (e) { log(`Preprocess skipped: ${e}`); }
+      } catch (e) {
+        log(`Preprocess skipped: ${e}`);
+      }
 
       const finalImage = canvas.toDataURL("image/png");
       log("OCR starting...");
 
       const result = await Tesseract.recognize(finalImage, "eng", {
-        logger: (m) => { if (m.status === "recognizing text") log(`OCR ${Math.round(m.progress * 100)}%`); },
+        logger: (m) => {
+          if (m.status === "recognizing text")
+            log(`OCR ${Math.round(m.progress * 100)}%`);
+        },
       });
 
       const text = result.data.text ?? "";
@@ -173,14 +211,18 @@ export function WeightScanner({
       }
     } catch (err) {
       log(`captureAndProcessImage CRASH: ${err}`);
-      setError(`Capture error: ${err instanceof Error ? err.message : String(err)}`);
+      setError(
+        `Capture error: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setIsProcessing(false);
     }
   };
 
   // ── Compute total ──
-  const computeTotal = (weights: WeightEntry[]): { total: number; unit: string } => {
+  const computeTotal = (
+    weights: WeightEntry[],
+  ): { total: number; unit: string } => {
     try {
       if (!weights || weights.length === 0) return { total: 0, unit: "LBS" };
       const refUnit = weights[0]?.unit ?? "LBS";
@@ -224,15 +266,21 @@ export function WeightScanner({
       setCollectedWeights([]);
       setLastDetected(null);
     } catch (err) {
-      log(`handleDone CRASH: ${err instanceof Error ? err.stack ?? err.message : String(err)}`);
-      setError(`Done failed: ${err instanceof Error ? err.message : String(err)}`);
+      log(
+        `handleDone CRASH: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`,
+      );
+      setError(
+        `Done failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   };
 
   const removeWeight = (index: number) => {
     try {
       setCollectedWeights((prev) => prev.filter((_, i) => i !== index));
-    } catch (e) { log(`removeWeight error: ${e}`); }
+    } catch (e) {
+      log(`removeWeight error: ${e}`);
+    }
   };
 
   const preprocessImageForOCR = (imageData: ImageData): ImageData => {
@@ -241,12 +289,16 @@ export function WeightScanner({
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
       let adj = gray < 128 ? gray * 0.5 : 128 + (gray - 128) * 1.5;
       adj = Math.min(255, Math.max(0, adj));
-      data[i] = adj; data[i + 1] = adj; data[i + 2] = adj;
+      data[i] = adj;
+      data[i + 1] = adj;
+      data[i + 2] = adj;
     }
     return imageData;
   };
 
-  const extractWeight = (text: string): { weight: number; unit: string } | null => {
+  const extractWeight = (
+    text: string,
+  ): { weight: number; unit: string } | null => {
     try {
       const clean = (text ?? "").replace(/\s+/g, " ").trim();
       const patterns = [
@@ -265,13 +317,19 @@ export function WeightScanner({
           if (!isNaN(weight) && weight > 0) return { weight, unit };
         }
       }
-    } catch (e) { log(`extractWeight error: ${e}`); }
+    } catch (e) {
+      log(`extractWeight error: ${e}`);
+    }
     return null;
   };
 
   const stopScanning = () => {
     try {
-      if (scanMode === "barcode" && scannerRef.current && isRunningRef.current) {
+      if (
+        scanMode === "barcode" &&
+        scannerRef.current &&
+        isRunningRef.current
+      ) {
         scannerRef.current.stop().catch(() => {});
         isRunningRef.current = false;
       }
@@ -280,7 +338,9 @@ export function WeightScanner({
         streamRef.current = null;
         if (videoRef.current) videoRef.current.srcObject = null;
       }
-    } catch (e) { log(`stopScanning error: ${e}`); }
+    } catch (e) {
+      log(`stopScanning error: ${e}`);
+    }
     setIsScanning(false);
   };
 
@@ -294,18 +354,26 @@ export function WeightScanner({
       {!isScanning && (
         <div className="grid grid-cols-2 gap-2">
           <Button
-            onClick={() => { setScanMode("barcode"); setError(""); setIsScanning(true); }}
-            variant="secondary" className="w-full"
+            onClick={() => {
+              setScanMode("barcode");
+              setError("");
+              setIsScanning(true);
+            }}
+            variant="secondary"
+            className="w-full"
           >
             <Barcode /> BarCode
           </Button>
           <Button
             onClick={() => {
-              setScanMode("weight"); setError("");
-              setCollectedWeights([]); setLastDetected(null);
+              setScanMode("weight");
+              setError("");
+              setCollectedWeights([]);
+              setLastDetected(null);
               setIsScanning(true);
             }}
-            variant="secondary" className="w-full"
+            variant="secondary"
+            className="w-full"
           >
             <Scale /> Weight (OCR)
           </Button>
@@ -315,8 +383,17 @@ export function WeightScanner({
       {/* Barcode view */}
       {isScanning && scanMode === "barcode" && (
         <>
-          <div id="qr-reader" className="w-full rounded-lg overflow-hidden min-h-[300px] bg-black" />
-          <Button onClick={stopScanning} className="w-full" variant="destructive">Stop scanning.</Button>
+          <div
+            id="qr-reader"
+            className="w-full rounded-lg overflow-hidden min-h-[300px] bg-black"
+          />
+          <Button
+            onClick={stopScanning}
+            className="w-full"
+            variant="destructive"
+          >
+            Stop scanning.
+          </Button>
         </>
       )}
 
@@ -324,7 +401,13 @@ export function WeightScanner({
       {isScanning && scanMode === "weight" && (
         <div className="space-y-3">
           <div className="relative w-full rounded-lg overflow-hidden bg-black min-h-[260px]">
-            <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
             <canvas ref={canvasRef} className="hidden" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="border-4 border-green-500 rounded-lg w-4/5 h-2/3 flex items-center justify-center">
@@ -336,10 +419,16 @@ export function WeightScanner({
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={captureAndProcessImage} className="flex-1" disabled={isProcessing}>
+            <Button
+              onClick={captureAndProcessImage}
+              className="flex-1"
+              disabled={isProcessing}
+            >
               {isProcessing ? "Processing..." : "📷 Capture & Add"}
             </Button>
-            <Button onClick={stopScanning} variant="destructive">Cancel</Button>
+            <Button onClick={stopScanning} variant="destructive">
+              Cancel
+            </Button>
           </div>
 
           {lastDetected && !isProcessing && (
@@ -350,7 +439,9 @@ export function WeightScanner({
 
           {isProcessing && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-900 text-center">Image analysis in progress...</p>
+              <p className="text-sm text-blue-900 text-center">
+                Image analysis in progress...
+              </p>
             </div>
           )}
 
@@ -362,17 +453,29 @@ export function WeightScanner({
               </p>
               <ul className="space-y-1">
                 {collectedWeights.map((entry, i) => (
-                  <li key={i} className="flex items-center justify-between bg-white border border-gray-100 rounded px-3 py-1.5 text-sm">
-                    <span className="font-medium">#{i + 1} — {entry.weight} {entry.unit}</span>
-                    <button onClick={() => removeWeight(i)} className="text-red-400 hover:text-red-600 ml-2">
+                  <li
+                    key={i}
+                    className="flex items-center justify-between bg-white border border-gray-100 rounded px-3 py-1.5 text-sm"
+                  >
+                    <span className="font-medium">
+                      #{i + 1} — {entry.weight} {entry.unit}
+                    </span>
+                    <button
+                      onClick={() => removeWeight(i)}
+                      className="text-red-400 hover:text-red-600 ml-2"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </li>
                 ))}
               </ul>
               <div className="flex items-center justify-between pt-1 border-t border-gray-200">
-                <span className="text-sm font-semibold text-gray-700">Total</span>
-                <span className="text-sm font-bold text-gray-900">{total} {unit}</span>
+                <span className="text-sm font-semibold text-gray-700">
+                  Total
+                </span>
+                <span className="text-sm font-bold text-gray-900">
+                  {total} {unit}
+                </span>
               </div>
               <Button
                 onClick={handleDone}
@@ -392,23 +495,6 @@ export function WeightScanner({
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
           <p className="text-sm text-red-600 text-center">{error}</p>
         </div>
-      )}
-
-      {/* ── Visible debug log for mobile production ── */}
-      {debugLog.length > 0 && (
-        <details className="bg-gray-900 rounded-lg p-2">
-          <summary className="text-xs text-gray-400 cursor-pointer select-none">
-            🪲 Debug log ({debugLog.length} lines) — tap to expand
-          </summary>
-          <ul className="mt-2 space-y-0.5 max-h-52 overflow-y-auto">
-            {debugLog.map((line, i) => (
-              <li key={i} className="text-xs text-green-400 font-mono break-all">{line}</li>
-            ))}
-          </ul>
-          <button onClick={() => setDebugLog([])} className="mt-1 text-xs text-gray-500 underline">
-            Clear
-          </button>
-        </details>
       )}
     </div>
   );
