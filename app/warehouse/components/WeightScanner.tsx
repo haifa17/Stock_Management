@@ -183,6 +183,7 @@ export function WeightScanner({
   const captureAndProcessImage = async () => {
     if (!videoRef.current || !canvasRef.current) {
       setError("Camera not ready");
+      window.alert("ERROR: Camera not ready");
       return;
     }
 
@@ -194,38 +195,50 @@ export function WeightScanner({
     const context = canvas.getContext("2d");
 
     if (!context) {
+      window.alert("ERROR: Canvas context not available");
       setIsProcessing(false);
       return;
     }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    const processedImageData = preprocessImageForOCR(imageData);
-    context.putImageData(processedImageData, 0, 0);
-
-    const finalImage = canvas.toDataURL("image/png");
-
     try {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const processedImageData = preprocessImageForOCR(imageData);
+      context.putImageData(processedImageData, 0, 0);
+
+      const finalImage = canvas.toDataURL("image/png");
+
       console.log("Starting OCR...");
+
+      // BETTER ERROR HANDLING - Check if Tesseract is available
+      if (typeof Tesseract === "undefined") {
+        window.alert("Tesseract library failed to load");
+        throw new Error("Tesseract library failed to load");
+      }
 
       const result = await Tesseract.recognize(finalImage, "eng", {
         logger: (m) => {
           if (m.status === "recognizing text") {
-            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+            const progress = Math.round(m.progress * 100);
+            window.alert(`OCR Progress: ${progress}%`);
           }
         },
+        // Specify worker path explicitly for production
+        workerPath:
+          "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
+        corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5",
       });
 
       const text = result.data.text;
       console.log("OCR Result:", text);
+      window.alert("OCR Result:\n" + text);
 
       const weightInfo = extractWeight(text);
 
       if (weightInfo) {
-        // NEW: Add weight to the list instead of closing
         const newWeight: ScannedWeight = {
           id: Date.now().toString(),
           weight: weightInfo.weight,
@@ -234,19 +247,19 @@ export function WeightScanner({
         };
 
         setScannedWeights((prev) => [...prev, newWeight]);
-        setError(""); // Clear any previous errors
-
-        // Don't stop scanning - keep it open for more weights
-        console.log(
-          `✓ Weight ${weightInfo.weight} ${weightInfo.unit} added. Total weights: ${scannedWeights.length + 1}`,
-        );
+        setError("");
+        console.log(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
+        window.alert(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
       } else {
+        window.alert("Failed to extract weight from:\n" + text);
         console.log("Failed to extract weight from:", text);
         setError(`Weight not detected. Try better lighting and positioning.`);
       }
-    } catch (err) {
-      console.error("OCR Error:", err);
-      setError("Error reading image");
+    } catch (err: any) {
+      window.alert("OCR FAILED:\n" + (err?.message || err));
+      setError(
+        `OCR failed: ${err.message}. Please try manual entry or better lighting.`,
+      );
     } finally {
       setIsProcessing(false);
     }
