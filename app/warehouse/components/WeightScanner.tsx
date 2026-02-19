@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Tesseract from "tesseract.js";
-import { Barcode, Scale, Trash2 } from "lucide-react";
+import { Barcode, Scale, Trash2, CheckCircle, XCircle } from "lucide-react";
 
 interface WeightScannerProps {
   onWeightDetected?: (weight: number, unit: string, fullText: string) => void;
@@ -22,10 +22,20 @@ export function WeightScanner({
   const [isScanning, setIsScanning] = useState(false);
   const [scanMode, setScanMode] = useState<"barcode" | "weight">("barcode");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
 
-  // NEW: Track multiple scanned weights
+  const log = (message: string) => {
+    console.log(message);
+    setDebugLogs((prev) => [
+      `[${new Date().toLocaleTimeString()}] ${message}`,
+      ...prev.slice(0, 49), // keep last 50 logs
+    ]);
+  };
+
   const [scannedWeights, setScannedWeights] = useState<ScannedWeight[]>([]);
   const [totalWeight, setTotalWeight] = useState(0);
 
@@ -39,10 +49,8 @@ export function WeightScanner({
     setIsMounted(true);
   }, []);
 
-  // NEW: Calculate total weight whenever scannedWeights changes
   useEffect(() => {
     if (scannedWeights.length > 0) {
-      // Convert all to LBS and sum
       const total = scannedWeights.reduce((sum, item) => {
         let weightInLbs = item.weight;
         if (item.unit === "KG") {
@@ -52,8 +60,6 @@ export function WeightScanner({
       }, 0);
 
       setTotalWeight(total);
-
-      // Send total to parent component
       onWeightDetected?.(
         total,
         "LBS",
@@ -89,23 +95,15 @@ export function WeightScanner({
           },
           (decodedText, decodedResult) => {
             console.log("Scanned code:", decodedText);
-            console.log(
-              "Format:",
-              decodedResult.result.format?.formatName || "Unknown",
-            );
-
             onBarcodeScanned?.(decodedText);
             isRunningRef.current = false;
             scanner.stop().catch(() => {});
             setIsScanning(false);
           },
-          (errorMessage) => {
-            // Suppress errors
-          },
+          () => {},
         );
 
         isRunningRef.current = true;
-        console.log("✓ Barcode scanner started");
       } catch (err) {
         console.error(err);
         setError("Unable to access camera");
@@ -119,7 +117,6 @@ export function WeightScanner({
     return () => {
       isCancelled = true;
       clearTimeout(timeout);
-
       if (scannerRef.current && isRunningRef.current) {
         scannerRef.current.stop().catch(() => {});
         isRunningRef.current = false;
@@ -135,8 +132,6 @@ export function WeightScanner({
 
     const startCamera = async () => {
       try {
-        console.log("Starting weight scanner camera...");
-
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: "environment",
@@ -154,7 +149,6 @@ export function WeightScanner({
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
           await videoRef.current.play();
-          console.log("Camera started successfully");
         }
       } catch (err) {
         console.error("Camera error:", err);
@@ -168,25 +162,37 @@ export function WeightScanner({
     return () => {
       isCancelled = true;
       clearTimeout(timeout);
-
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
-
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
     };
   }, [isScanning, isMounted, scanMode]);
+
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setError("");
+    // Auto-clear after 3 seconds
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
+  const showError = (message: string) => {
+    setError(message);
+    setSuccessMessage("");
+  };
+
   const captureAndProcessImage = async () => {
     if (!videoRef.current || !canvasRef.current) {
-      setError("Camera not ready");
+      showError("Camera not ready");
       return;
     }
 
     setIsProcessing(true);
     setError("");
+    setSuccessMessage("");
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -208,9 +214,6 @@ export function WeightScanner({
 
       const finalImage = canvas.toDataURL("image/png");
 
-      console.log("Starting OCR...");
-
-      // BETTER ERROR HANDLING - Check if Tesseract is available
       if (typeof Tesseract === "undefined") {
         throw new Error("Tesseract library failed to load");
       }
@@ -221,35 +224,35 @@ export function WeightScanner({
             console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
           }
         },
-        // Specify worker path explicitly for production
         workerPath:
           "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
         corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5",
       });
 
       const text = result.data.text;
-      console.log("OCR Result:", text);
+      log(`OCR raw text: "${text.replace(/\n/g, " ").trim()}"`);
 
       const weightInfo = extractWeight(text);
 
       if (weightInfo) {
+        log(`✓ Weight matched: ${weightInfo.weight} ${weightInfo.unit}`);
         const newWeight: ScannedWeight = {
           id: Date.now().toString(),
           weight: weightInfo.weight,
           unit: weightInfo.unit,
           timestamp: Date.now(),
         };
-
         setScannedWeights((prev) => [...prev, newWeight]);
-        setError("");
-        window.alert(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
+        showSuccess(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
       } else {
-        window.alert("Failed to extract weight from:\n" + text);
-        setError(`Weight not detected. Try better lighting and positioning.`);
+        log(`✗ No weight pattern matched in: "${text.replace(/\n/g, " ").trim()}"`);
+        showError(
+          `Weight not detected. OCR read: "${text.substring(0, 80).trim()}". Try better lighting and positioning.`,
+        );
       }
     } catch (err: any) {
-      console.error("OCR Error:", err);
-      setError(
+      log(`OCR Error: ${err.message}`);
+      showError(
         `OCR failed: ${err.message}. Please try manual entry or better lighting.`,
       );
     } finally {
@@ -259,24 +262,14 @@ export function WeightScanner({
 
   const preprocessImageForOCR = (imageData: ImageData): ImageData => {
     const data = imageData.data;
-
     for (let i = 0; i < data.length; i += 4) {
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-
-      let adjusted = gray;
-      if (adjusted < 128) {
-        adjusted = adjusted * 0.5;
-      } else {
-        adjusted = 128 + (adjusted - 128) * 1.5;
-      }
-
+      let adjusted = gray < 128 ? gray * 0.5 : 128 + (gray - 128) * 1.5;
       adjusted = Math.min(255, Math.max(0, adjusted));
-
       data[i] = adjusted;
       data[i + 1] = adjusted;
       data[i + 2] = adjusted;
     }
-
     return imageData;
   };
 
@@ -289,7 +282,7 @@ export function WeightScanner({
       .trim()
       .toUpperCase();
 
-    console.log("Searching in cleaned text:", cleanText);
+    log(`Cleaned OCR text: "${cleanText}"`);
 
     const patterns = [
       /NET\s*:?\s*(\d+\.?\d*)\s*(LB|LBS|POUND|POUNDS)/i,
@@ -300,66 +293,52 @@ export function WeightScanner({
     ];
 
     for (let i = 0; i < patterns.length; i++) {
-      const pattern = patterns[i];
-      const match = cleanText.match(pattern);
-
+      const match = cleanText.match(patterns[i]);
       if (match) {
         const weight = parseFloat(match[1]);
         let unit = match[2].toUpperCase();
-
         if (unit.includes("LB") || unit.includes("POUND")) unit = "LBS";
         if (unit.includes("KG") || unit.includes("KILOGRAM")) unit = "KG";
-
         if (weight > 0 && weight < 10000) {
-          console.log(`✓ Weight extracted (pattern ${i + 1}):`, weight, unit);
+          log(`✓ Pattern ${i + 1} matched: ${weight} ${unit}`);
           return { weight, unit };
         }
       }
     }
-
-    console.log("✗ No weight pattern matched");
+    log("✗ No weight pattern matched");
     return null;
   };
 
-  // NEW: Remove a scanned weight
   const removeWeight = (id: string) => {
     setScannedWeights((prev) => prev.filter((w) => w.id !== id));
   };
 
-  // NEW: Clear all weights
   const clearAllWeights = () => {
     setScannedWeights([]);
     setError("");
+    setSuccessMessage("");
   };
 
-  // NEW: Finish scanning and use the total
-  const finishScanning = () => {
-    stopScanning();
-  };
+  const finishScanning = () => stopScanning();
 
   const stopScanning = () => {
     if (scanMode === "barcode" && scannerRef.current && isRunningRef.current) {
       scannerRef.current.stop().catch(() => {});
       isRunningRef.current = false;
     }
-
     if (scanMode === "weight") {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
-
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
     }
-
     setIsScanning(false);
   };
 
-  if (!isMounted) {
-    return null;
-  }
+  if (!isMounted) return null;
 
   return (
     <div className="space-y-3">
@@ -370,6 +349,7 @@ export function WeightScanner({
             onClick={() => {
               setScanMode("barcode");
               setError("");
+              setSuccessMessage("");
               setIsScanning(true);
             }}
             variant="secondary"
@@ -381,7 +361,8 @@ export function WeightScanner({
             onClick={() => {
               setScanMode("weight");
               setError("");
-              setScannedWeights([]); // Clear previous weights when starting new scan
+              setSuccessMessage("");
+              setScannedWeights([]);
               setIsScanning(true);
             }}
             variant="secondary"
@@ -392,7 +373,23 @@ export function WeightScanner({
         </div>
       )}
 
-      {/* NEW: Display scanned weights summary (always visible) */}
+      {/* Success Message Banner */}
+      {successMessage && (
+        <div className="flex items-center gap-2 bg-green-50 border border-green-400 rounded-lg p-3 animate-in fade-in duration-200">
+          <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+          <p className="text-sm font-semibold text-green-800">{successMessage}</p>
+        </div>
+      )}
+
+      {/* Error Message Banner */}
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-300 rounded-lg p-3 animate-in fade-in duration-200">
+          <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* Scanned weights summary (visible when not scanning) */}
       {scannedWeights.length > 0 && !isScanning && (
         <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
@@ -410,7 +407,6 @@ export function WeightScanner({
             </Button>
           </div>
 
-          {/* List of individual weights */}
           <div className="space-y-2 mb-3">
             {scannedWeights.map((item, index) => (
               <div
@@ -440,7 +436,6 @@ export function WeightScanner({
             ))}
           </div>
 
-          {/* Total weight */}
           <div className="bg-green-100 rounded-lg p-3 border border-green-300">
             <div className="text-center">
               <p className="text-xs text-green-700 mb-1">Total Weight</p>
@@ -459,20 +454,15 @@ export function WeightScanner({
             id="qr-reader"
             className="w-full rounded-lg overflow-hidden min-h-[300px] bg-black"
           />
-          <Button
-            onClick={stopScanning}
-            className="w-full"
-            variant="destructive"
-          >
+          <Button onClick={stopScanning} className="w-full" variant="destructive">
             Stop Scanning
           </Button>
         </>
       )}
 
-      {/* Weight Scanner View - ENHANCED */}
+      {/* Weight Scanner View */}
       {isScanning && scanMode === "weight" && (
         <div className="space-y-3">
-          {/* Current scan count */}
           {scannedWeights.length > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-900 text-center font-medium">
@@ -495,16 +485,13 @@ export function WeightScanner({
               muted
             />
             <canvas ref={canvasRef} className="hidden" />
-
-            {/* Overlay guide */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="border-4 border-green-500 rounded-lg w-4/5 h-2/3 flex items-center justify-center">
                 <span className="text-white bg-black bg-opacity-80 px-4 py-2 rounded text-sm font-bold text-center">
                   Center the label
                   <br />
                   <span className="text-xs">
-                    Scan {scannedWeights.length === 0 ? "first" : "next"} weight
-                    label
+                    Scan {scannedWeights.length === 0 ? "first" : "next"} weight label
                   </span>
                 </span>
               </div>
@@ -545,13 +532,12 @@ export function WeightScanner({
           {isProcessing && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-900"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-900" />
                 <p className="text-sm text-blue-900">Reading weight label...</p>
               </div>
             </div>
           )}
 
-          {/* Instructions */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
             <p className="text-xs text-amber-900 font-bold mb-1">
               📋 Multi-weight scanning:
@@ -565,13 +551,49 @@ export function WeightScanner({
           </div>
         </div>
       )}
+      {/* Debug Panel */}
+      <div className="mt-2">
+        <button
+          onClick={() => setShowDebug((v) => !v)}
+          className="text-xs text-gray-400 underline w-full text-left"
+        >
+          {showDebug ? "▲ Hide" : "▼ Show"} debug logs ({debugLogs.length})
+        </button>
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-sm text-red-600 text-center">{error}</p>
-        </div>
-      )}
+        {showDebug && (
+          <div className="mt-1 bg-gray-950 rounded-lg p-3 max-h-64 overflow-y-auto">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-gray-400 font-mono">
+                Production Debug Log
+              </span>
+              <button
+                onClick={() => setDebugLogs([])}
+                className="text-xs text-gray-500 hover:text-gray-300"
+              >
+                Clear
+              </button>
+            </div>
+            {debugLogs.length === 0 ? (
+              <p className="text-xs text-gray-500 font-mono">No logs yet. Capture a weight to start.</p>
+            ) : (
+              debugLogs.map((log, i) => (
+                <p
+                  key={i}
+                  className={`text-xs font-mono leading-relaxed ${
+                    log.includes("✓")
+                      ? "text-green-400"
+                      : log.includes("✗") || log.includes("Error")
+                      ? "text-red-400"
+                      : "text-gray-300"
+                  }`}
+                >
+                  {log}
+                </p>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
