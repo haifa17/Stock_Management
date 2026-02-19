@@ -36,6 +36,11 @@ export function WeightScanner({
   useEffect(() => {
     setIsMounted(true);
   }, []);
+  useEffect(() => {
+    window.onerror = function (message, source, lineno, colno, error) {
+      alert(`CRASH:\n${message}\nLine: ${lineno}:${colno}`);
+    };
+  }, []);
   // NEW: Calculate total weight whenever scannedWeights changes
   useEffect(() => {
     if (scannedWeights.length > 0) {
@@ -51,11 +56,15 @@ export function WeightScanner({
       setTotalWeight(total);
 
       // Send total to parent component
-      onWeightDetected?.(
-        total,
-        "LBS",
-        `Total of ${scannedWeights.length} weights`,
-      );
+      try {
+        onWeightDetected?.(
+          total,
+          "LBS",
+          `Total of ${scannedWeights.length} weights`,
+        );
+      } catch (err: any) {
+        window.alert("PARENT CRASHED:\n" + (err?.message || err));
+      }
     } else {
       setTotalWeight(0);
     }
@@ -246,7 +255,13 @@ export function WeightScanner({
           timestamp: Date.now(),
         };
 
-        setScannedWeights((prev) => [...prev, newWeight]);
+        setScannedWeights((prev) => {
+          if (!Array.isArray(prev)) {
+            window.alert("scannedWeights was not array!");
+            return [newWeight];
+          }
+          return [...prev, newWeight];
+        });
         setError("");
         console.log(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
         window.alert(`✓ Weight added: ${weightInfo.weight} ${weightInfo.unit}`);
