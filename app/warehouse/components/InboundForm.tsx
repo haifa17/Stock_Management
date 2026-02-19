@@ -78,8 +78,8 @@ export function InboundForm({
           category: "",
           type: "",
         });
-        toast.warning(
-          `Product "${scannedProduct}" not found. Creating emergency product...`,
+        toast.success(
+          ` Creating emergency product...`,
         );
       }
     }
