@@ -12,6 +12,7 @@ import { Lot } from "@/lib/types";
 import { STATUS_OPTIONS, STATUS_STYLES } from "../constants";
 import { ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
+import { formatDate } from "@/lib/utils";
 interface InventoryCardProps {
   item: Lot;
 }
@@ -99,7 +100,9 @@ export function InventoryCard({ item }: InventoryCardProps) {
         <div className="grid grid-cols-3 gap-2 text-sm mb-3">
           <div>
             <p className="text-muted-foreground">Current</p>
-            <p className="font-medium text-foreground">{item.currentStock} lb</p>
+            <p className="font-medium text-foreground">
+              {item.currentStock} lb
+            </p>
           </div>
           <div>
             <p className="text-muted-foreground">Received</p>
@@ -120,20 +123,18 @@ export function InventoryCard({ item }: InventoryCardProps) {
         )}
 
         <div className="flex gap-2 text-sm  text-muted-foreground mb-3">
-          <span>
-            Arrival: {new Date(item.arrivalDate).toISOString().split("T")[0]}
-          </span>
+          <span>Arrival: {formatDate(item.arrivalDate)}</span>
           {item.productionDate && (
             <>
               <span>•</span>
-              <span>Production: {item.productionDate}</span>
+              <span>Production: {formatDate(item.productionDate)}</span>
             </>
           )}
           {item.expirationDate && (
             <>
               <span>•</span>
               <span className="text-amber-600 font-medium">
-                Expires: {item.expirationDate}
+                Expires: {formatDate(item.expirationDate)}
               </span>
             </>
           )}

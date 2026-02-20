@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatDate } from "@/lib/utils";
 interface SalesCardProps {
   sale: SaleWithProduct;
 }
@@ -45,12 +46,7 @@ export function SalesCard({ sale }: SalesCardProps) {
 
     // ===== DATE (RIGHT SIDE) =====
     doc.setFontSize(10);
-    doc.text(
-      `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
-      pageWidth - 20,
-      22,
-      { align: "right" },
-    );
+    doc.text(`${formatDate(now)}`, pageWidth - 20, 22, { align: "right" });
 
     // Divider line
     doc.setDrawColor(200);
@@ -85,7 +81,7 @@ export function SalesCard({ sale }: SalesCardProps) {
     rightY += 6;
 
     doc.text(
-      `Sale Date: ${new Date(sale.saleDate).toLocaleDateString()}`,
+      `Sale Date: ${formatDate(new Date(sale.saleDate))}`,
       pageWidth - 20,
       rightY,
       { align: "right" },
@@ -100,7 +96,7 @@ export function SalesCard({ sale }: SalesCardProps) {
           "Weight Out (lb)",
           "Pieces",
           "Unit Price ($)",
-          "Total ($)",
+          "Proposed Price ($)",
         ],
       ],
       body: [
@@ -127,9 +123,14 @@ export function SalesCard({ sale }: SalesCardProps) {
 
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text(`Propsed Price: $${sale.price.toFixed(2)}`, pageWidth - 20, finalY + 15, {
-      align: "right",
-    });
+    doc.text(
+      `Total: $${sale.price.toFixed(2)}`,
+      pageWidth - 20,
+      finalY + 15,
+      {
+        align: "right",
+      },
+    );
 
     // ===== NOTES =====
     if (sale.notes) {
@@ -196,7 +197,7 @@ export function SalesCard({ sale }: SalesCardProps) {
           <div>
             <p className="text-muted-foreground font-medium">Date</p>
             <p className="font-semibold text-foreground">
-              {new Date(sale.saleDate).toLocaleDateString()}
+              {formatDate(new Date(sale.saleDate))}
             </p>
           </div>
         </div>
