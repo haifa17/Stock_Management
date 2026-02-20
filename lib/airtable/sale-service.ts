@@ -18,6 +18,13 @@ function transformSaleRecord(record: any): Sale {
     voiceNoteUrl: fields.VoiceNoteUrl,
     saleDate: fields.SaleDate,
     processedBy: fields.ProcessedBy,
+    paymentTerms: fields.PaymentTerms,
+    sellerEIN: fields.SellerEIN,
+    bankName: fields.BankName,
+    routing: fields.Routing,
+    account: fields.Account,
+    previousBalance: Number(fields.PreviousBalance) || 0,
+    credits: Number(fields.Credits) || 0,
   };
 }
 export const saleService = {
@@ -38,7 +45,7 @@ export const saleService = {
         LotId: data.lotId, // ✅ Text field - the custom lot ID string
         Lots: [lot.id], // ✅ Linked record - the Airtable record ID
         WeightOut: data.weightOut,
-        Client:data.client,
+        Client: data.client,
         Pieces: data.pieces,
         Price: data.price,
         SaleDate: new Date().toISOString(),
@@ -53,6 +60,27 @@ export const saleService = {
       }
       if (data.processedBy) {
         recordData.ProcessedBy = data.processedBy;
+      }
+      if (data.paymentTerms) {
+        recordData.PaymentTerms = data.paymentTerms;
+      }
+      if (data.sellerEIN) {
+        recordData.SellerEIN = data.sellerEIN;
+      }
+      if (data.previousBalance) {
+        recordData.PreviousBalance = data.previousBalance;
+      }
+      if (data.credits) {
+        recordData.Credits = data.credits;
+      }
+      if (data.bankName) {
+        recordData.BankName = data.bankName;
+      }
+      if (data.routing) {
+        recordData.Routing = data.routing;
+      }
+      if (data.account) {
+        recordData.Account = data.account;
       }
       console.log("Creating record with:", recordData);
 

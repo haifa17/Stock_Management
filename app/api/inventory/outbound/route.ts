@@ -29,6 +29,15 @@ export async function POST(request: Request) {
     const client = formData.get("client") as string;
     const notes = formData.get("notes") as string;
     const voiceNote = formData.get("voiceNote") as File | null;
+    const previousBalance = parseFloat(
+      formData.get("previousBalance") as string,
+    );
+    const credits = parseFloat(formData.get("credits") as string);
+    const paymentTerms = formData.get("paymentTerms") as string;
+    const sellerEIN = formData.get("sellerEIN") as string;
+    const bankName = formData.get("bankName") as string;
+    const routing = formData.get("routing") as string;
+    const account = formData.get("account") as string;
 
     // Validate required fields
     if (!batchId || !weightOut || !pieces) {
@@ -89,6 +98,13 @@ export async function POST(request: Request) {
       client: client,
       notes: notes,
       voiceNoteUrl: voiceNoteUrl || undefined,
+      paymentTerms: paymentTerms,
+      sellerEIN: sellerEIN,
+      previousBalance: previousBalance,
+      credits: credits,
+      bankName: bankName,
+      routing: routing,
+      account: account,
     });
     const updatedLot = await lotService.getByLotId(batchId);
     // Send WhatsApp notification about the sale
@@ -163,6 +179,13 @@ async function sendSaleNotification(
 
 📊 *Sale Details:*
 👤 Client Name: ${sale.client} 
+💳 Payment Terms: ${sale.paymentTerms || "N/A"}
+🆔 Seller EIN: ${sale.sellerEIN || "N/A"}
+💰 Previous Balance: ${sale.previousBalance ?? 0}
+💵 Credits: ${sale.credits ?? 0}
+🏦 Bank: ${sale.bankName || "N/A"}
+🏛️ Routing #: ${sale.routing || "N/A"}
+🏦 Account #: ${sale.account || "N/A"}
 ⚖️ Weight Out: ${sale.weightOut} lb
 🔢 Pieces: ${sale.pieces}
 💸 Proposed Sales Price: ${sale.price}

@@ -71,4 +71,11 @@ export interface Sale {
   voiceNoteUrl?: string;
   saleDate: string;
   processedBy?: string;
+  paymentTerms?: string;
+  sellerEIN?: string;
+  previousBalance?: number;
+  credits?: number;
+  bankName?: string;
+  routing?: string;
+  account?: string;
 }

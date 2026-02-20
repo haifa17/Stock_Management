@@ -40,7 +40,7 @@ export interface AirtableLotFields {
   Grade: string;
   Brand: string;
   Origin: string;
-  Condition: string;
+  Condition?: string;
   ProductionDate: string;
   ExpirationDate: string;
   QtyReceived: number; // lb
@@ -71,6 +71,13 @@ export interface AirtableSaleFields {
   VoiceNoteUrl?: string;
   SaleDate: string; // Timestamp
   ProcessedBy?: string; // User ID
+  PaymentTerms?: string;
+  SellerEIN?: string;
+  PreviousBalance?: number;
+  Credits?: number;
+  BankName?: string;
+  Routing?: string;
+  Account?: string;
 }
 
 export interface AirtableOrderFields {

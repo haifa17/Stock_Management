@@ -345,7 +345,7 @@ export function InboundForm({
             <Label htmlFor="emergencyCategory">Category</Label>
             <Input
               id="emergencyCategory"
-              placeholder="e.g., Beef, Chicken, Pork"
+              placeholder="e.g., Beef, Chicken"
               value={emergencyProductData.category}
               onChange={(e) =>
                 setEmergencyProductData({

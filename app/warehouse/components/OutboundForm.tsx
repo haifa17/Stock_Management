@@ -34,7 +34,13 @@ export function OutboundForm({
   const [submitted, setSubmitted] = useState(false);
   const [voiceNote, setVoiceNote] = useState<Blob | null>(null);
   const [weightAutoFilled, setWeightAutoFilled] = useState(false);
-
+  const [paymentTerms, setPaymentTerms] = useState("");
+  const [sellerEIN, setSellerEIN] = useState("");
+  const [previousBalance, setPreviousBalance] = useState("");
+  const [credits, setCredits] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [routing, setRouting] = useState("");
+  const [account, setAccount] = useState("");
   // Set default selected batch on mount
   useEffect(() => {
     if (batches.length > 0 && !selectedBatch && !scannedBatch) {
@@ -101,6 +107,13 @@ export function OutboundForm({
       formData.append("pieces", pieces);
       formData.append("client", client);
       formData.append("price", price);
+      if (paymentTerms) formData.append("paymentTerms", paymentTerms);
+      if (sellerEIN) formData.append("sellerEIN", sellerEIN);
+      if (previousBalance) formData.append("previousBalance", previousBalance);
+      if (credits) formData.append("credits", credits);
+      if (bankName) formData.append("bankName", bankName);
+      if (routing) formData.append("routing", routing);
+      if (account) formData.append("account", account);
 
       if (voiceNote) {
         formData.append("voiceNote", voiceNote, "voice-note.webm");
@@ -142,6 +155,13 @@ export function OutboundForm({
         setPrice("");
         setVoiceNote(null);
         setWeightAutoFilled(false);
+        setPaymentTerms("");
+        setSellerEIN("");
+        setPreviousBalance("");
+        setCredits("");
+        setBankName("");
+        setRouting("");
+        setAccount("");
       }, 2000);
     } catch (error: any) {
       console.error("Error:", error);
@@ -263,6 +283,100 @@ export function OutboundForm({
           disabled={isSubmitting}
           className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
+      </div>
+      {/* Payment Terms */}
+      <div className="space-y-2">
+        <Label htmlFor="paymentTerms">Payment Terms</Label>
+        <Input
+          id="paymentTerms"
+          placeholder="e.g. Net 30, COD"
+          value={paymentTerms}
+          onChange={(e) => setPaymentTerms(e.target.value)}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* Seller EIN */}
+      <div className="space-y-2">
+        <Label htmlFor="sellerEIN">Seller EIN</Label>
+        <Input
+          id="sellerEIN"
+          placeholder="XX-XXXXXXX"
+          value={sellerEIN}
+          onChange={(e) => setSellerEIN(e.target.value)}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* Previous Balance & Credits — side by side */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="previousBalance">Previous Balance ($)</Label>
+          <Input
+            id="previousBalance"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            min="0"
+            value={previousBalance}
+            onChange={(e) => setPreviousBalance(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="credits">Credits ($)</Label>
+          <Input
+            id="credits"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            min="0"
+            value={credits}
+            onChange={(e) => setCredits(e.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
+
+      {/* Banking Info */}
+      <div className="space-y-2">
+        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Banking Information
+        </Label>
+        <div className="space-y-3 rounded-md border p-3">
+          <div className="space-y-2">
+            <Label htmlFor="bankName">Bank Name</Label>
+            <Input
+              id="bankName"
+              placeholder="Bank name"
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="routing">Routing #</Label>
+              <Input
+                id="routing"
+                placeholder="000000000"
+                value={routing}
+                onChange={(e) => setRouting(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="account">Account #</Label>
+              <Input
+                id="account"
+                placeholder="Account number"
+                value={account}
+                onChange={(e) => setAccount(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+        </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor="notes">Notes (optional)</Label>

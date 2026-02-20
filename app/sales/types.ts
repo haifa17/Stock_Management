@@ -11,4 +11,11 @@ export interface SaleWithProduct {
   saleDate: string;
   processedBy?: string;
   voiceNoteUrl?: string;
+  paymentTerms?: string;
+  sellerEIN?: string;
+  previousBalance?: number;
+  credits?: number;
+  bankName?: string;
+  routing?: string;
+  account?: string;
 }
