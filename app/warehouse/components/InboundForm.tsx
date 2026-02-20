@@ -487,7 +487,7 @@ export function InboundForm({
       {/* Quantity Received (Big Pad) */}
       <div className="space-y-2">
         <Label htmlFor="qtyReceived" className="flex items-center gap-2">
-          Qty Received (£)
+          Qty Received (lb)
           {weightAutoFilled && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full animate-pulse">
               ⚖️ Auto-filled from scanner

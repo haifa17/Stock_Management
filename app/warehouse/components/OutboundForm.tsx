@@ -73,7 +73,7 @@ export function OutboundForm({
       // Check if weight exceeds available stock
       if (selectedBatch && weightInLbs > selectedBatch.currentStock) {
         toast.warning(
-          `Detected weight (${weightInLbs.toFixed(2)} £) exceeds available stock (${selectedBatch.currentStock} £)`,
+          `Detected weight (${weightInLbs.toFixed(2)} lb) exceeds available stock (${selectedBatch.currentStock} lb)`,
         );
       }
 
@@ -188,7 +188,7 @@ export function OutboundForm({
         />
         {selectedBatch && (
           <p className="text-sm text-muted-foreground">
-            Available: {selectedBatch.currentStock} £
+            Available: {selectedBatch.currentStock} lb
           </p>
         )}
       </div>
@@ -196,7 +196,7 @@ export function OutboundForm({
       {/* Catch Weight Entry */}
       <div className="space-y-2">
         <Label htmlFor="weightOut" className="flex items-center gap-2">
-          Weight Out (£)
+          Weight Out (lb)
           {weightAutoFilled && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full animate-pulse">
               ⚖️ Auto-filled from scanner

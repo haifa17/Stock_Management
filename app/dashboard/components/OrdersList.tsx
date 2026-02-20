@@ -72,7 +72,7 @@ export function OrdersList({ initialOrders }: OrdersListProps) {
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mb-2">
-              {order.items.join(", ")} • {order.totalWeight} £
+              {order.items.join(", ")} • {order.totalWeight} lb
             </p>
             <div className="flex gap-2">
               {ORDER_STATUSES.map((status) => (

@@ -97,7 +97,7 @@ export function SalesCard({ sale }: SalesCardProps) {
       head: [
         [
           "Description",
-          "Weight Out (£)",
+          "Weight Out (lb)",
           "Pieces",
           "Unit Price ($)",
           "Total ($)",
@@ -127,7 +127,7 @@ export function SalesCard({ sale }: SalesCardProps) {
 
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text(`TOTAL: $${sale.price.toFixed(2)}`, pageWidth - 20, finalY + 15, {
+    doc.text(`Propsed Price: $${sale.price.toFixed(2)}`, pageWidth - 20, finalY + 15, {
       align: "right",
     });
 
@@ -183,7 +183,7 @@ export function SalesCard({ sale }: SalesCardProps) {
         <div className="grid grid-cols-4 gap-2 text-sm mb-3">
           <div>
             <p className="text-red-500  font-medium">Weight Out</p>
-            <p className="font-semibold text-red-500 ">{sale.weightOut} £</p>
+            <p className="font-semibold text-red-500 ">{sale.weightOut} lb</p>
           </div>
           <div>
             <p className="text-muted-foreground font-medium">Pieces</p>

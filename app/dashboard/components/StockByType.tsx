@@ -25,7 +25,7 @@ export function StockByType({ stockByType }: StockByTypeProps) {
           {(Object.keys(stockByType) as Array<keyof typeof stockByType>).map((type) => (
             <div key={type}>
               <p className="text-lg font-semibold text-foreground">
-                {stockByType[type].toFixed(1)} £
+                {stockByType[type].toFixed(1)} lb
               </p>
               <p className="text-xs text-muted-foreground">
                 {STOCK_TYPE_LABELS[type]}

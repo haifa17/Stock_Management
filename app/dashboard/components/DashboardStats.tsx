@@ -27,7 +27,7 @@ export function DashboardStats({
           <p className="text-2xl font-bold text-foreground">
             {totalWeight.toFixed(1)}
           </p>
-          <p className="text-xs text-muted-foreground">Total Stock (£)</p>
+          <p className="text-xs text-muted-foreground">Total Stock (lb)</p>
         </CardContent>
       </Card>
       <Card>
@@ -35,7 +35,7 @@ export function DashboardStats({
           <p className="text-2xl font-bold text-green-600">
             {availableWeight.toFixed(1)}
           </p>
-          <p className="text-xs text-muted-foreground">Available (£)</p>
+          <p className="text-xs text-muted-foreground">Available (lb)</p>
         </CardContent>
       </Card>
 
@@ -54,7 +54,7 @@ export function DashboardStats({
               {totalInboundToday.toFixed(1)}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">Inbound Today (£)</p>
+          <p className="text-xs text-muted-foreground">Inbound Today (lb)</p>
         </CardContent>
       </Card>
 
@@ -67,7 +67,7 @@ export function DashboardStats({
               {totalOutboundToday.toFixed(1)}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">Outbound Today (£)</p>
+          <p className="text-xs text-muted-foreground">Outbound Today (lb)</p>
         </CardContent>
       </Card>
 
@@ -82,7 +82,7 @@ export function DashboardStats({
             {netChange >= 0 ? "+" : ""}
             {netChange.toFixed(1)}
           </p>
-          <p className="text-xs text-muted-foreground">Net Change (£)</p>
+          <p className="text-xs text-muted-foreground">Net Change (lb)</p>
         </CardContent>
       </Card>
 

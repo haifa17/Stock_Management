@@ -132,7 +132,7 @@ export function RecentActivity({
                         }`}
                       >
                         {activity.type === "inbound" ? "+" : "-"}
-                        {activity.weight.toFixed(1)} £
+                        {activity.weight.toFixed(1)} lb
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {formatDate(activity.date)}
