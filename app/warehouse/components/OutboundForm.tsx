@@ -41,6 +41,8 @@ export function OutboundForm({
   const [bankName, setBankName] = useState("");
   const [routing, setRouting] = useState("");
   const [account, setAccount] = useState("");
+  const [freightCharge, setFreightCharge] = useState("");
+  const [fuelSurcharge, setFuelSurcharge] = useState("");
   // Set default selected batch on mount
   useEffect(() => {
     if (batches.length > 0 && !selectedBatch && !scannedBatch) {
@@ -114,7 +116,8 @@ export function OutboundForm({
       if (bankName) formData.append("bankName", bankName);
       if (routing) formData.append("routing", routing);
       if (account) formData.append("account", account);
-
+      if (freightCharge) formData.append("freightCharge", freightCharge);
+      if (fuelSurcharge) formData.append("fuelSurcharge", fuelSurcharge);
       if (voiceNote) {
         formData.append("voiceNote", voiceNote, "voice-note.webm");
       } else {
@@ -162,6 +165,8 @@ export function OutboundForm({
         setBankName("");
         setRouting("");
         setAccount("");
+        setFreightCharge("");
+        setFuelSurcharge("");
       }, 2000);
     } catch (error: any) {
       console.error("Error:", error);
@@ -283,6 +288,40 @@ export function OutboundForm({
           disabled={isSubmitting}
           className="text-2xl py-6 placeholder:text-base" // "Big Pad" styling
         />
+      </div>
+      {/* Surcharges */}
+      <div className="space-y-2">
+        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Surcharges (optional)
+        </Label>
+        <div className="grid grid-cols-2 gap-3 rounded-md border p-3">
+          <div className="space-y-2">
+            <Label htmlFor="freightCharge">Freight / Delivery ($)</Label>
+            <Input
+              id="freightCharge"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              min="0"
+              value={freightCharge}
+              onChange={(e) => setFreightCharge(e.target.value)}
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fuelSurcharge">Fuel Surcharge ($)</Label>
+            <Input
+              id="fuelSurcharge"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              min="0"
+              value={fuelSurcharge}
+              onChange={(e) => setFuelSurcharge(e.target.value)}
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
       </div>
       {/* Payment Terms */}
       <div className="space-y-2">

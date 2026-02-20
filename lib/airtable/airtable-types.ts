@@ -78,6 +78,8 @@ export interface AirtableSaleFields {
   BankName?: string;
   Routing?: string;
   Account?: string;
+  freightCharge?: number;
+  fuelSurcharge?: number;
 }
 
 export interface AirtableOrderFields {

@@ -25,6 +25,8 @@ function transformSaleRecord(record: any): Sale {
     account: fields.Account,
     previousBalance: Number(fields.PreviousBalance) || 0,
     credits: Number(fields.Credits) || 0,
+    freightCharge: Number(fields.freightCharge) || 0,
+    fuelSurcharge: Number(fields.fuelSurcharge) || 0,
   };
 }
 export const saleService = {
@@ -81,6 +83,12 @@ export const saleService = {
       }
       if (data.account) {
         recordData.Account = data.account;
+      }
+      if (data.freightCharge) {
+        recordData.freightCharge = data.freightCharge;
+      }
+      if (data.fuelSurcharge) {
+        recordData.fuelSurcharge = data.fuelSurcharge;
       }
       console.log("Creating record with:", recordData);
 

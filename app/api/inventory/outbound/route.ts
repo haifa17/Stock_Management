@@ -38,6 +38,8 @@ export async function POST(request: Request) {
     const bankName = formData.get("bankName") as string;
     const routing = formData.get("routing") as string;
     const account = formData.get("account") as string;
+    const freightCharge = parseFloat(formData.get("freightCharge") as string);
+    const fuelSurcharge = parseFloat(formData.get("fuelSurcharge") as string);
 
     // Validate required fields
     if (!batchId || !weightOut || !pieces) {
@@ -105,6 +107,8 @@ export async function POST(request: Request) {
       bankName: bankName,
       routing: routing,
       account: account,
+      freightCharge: freightCharge,
+      fuelSurcharge: fuelSurcharge,
     });
     const updatedLot = await lotService.getByLotId(batchId);
     // Send WhatsApp notification about the sale
@@ -168,28 +172,33 @@ async function sendSaleNotification(
       (updatedLot.currentStock / originalLot.qtyReceived) *
       100
     ).toFixed(1);
-
+    const freight = sale.freightCharge ?? 0;
+    const fuel = sale.fuelSurcharge ?? 0;
+    const grandTotal = sale.price + freight + fuel;
     // Format the message
     const messageBody = `
 📤 *Sale Processed - Outbound*
-
 🆔 *Sale ID:* ${sale.id}
 📦 *Lot ID:* ${sale.lotId}
 🏷️ *Product:* ${originalLot.product}
 
 📊 *Sale Details:*
-👤 Client Name: ${sale.client} 
+👤 Client Name: ${sale.client}
 💳 Payment Terms: ${sale.paymentTerms || "N/A"}
 🆔 Seller EIN: ${sale.sellerEIN || "N/A"}
-💰 Previous Balance: ${sale.previousBalance ?? 0}
-💵 Credits: ${sale.credits ?? 0}
+⚖️ Weight Out: ${sale.weightOut} lb
+🔢 Pieces: ${sale.pieces}
+💸 Base Price: $${sale.price.toFixed(2)}${freight > 0 ? `\n🚚 Freight / Delivery: $${freight.toFixed(2)}` : ""}${fuel > 0 ? `\n⛽ Fuel Surcharge: $${fuel.toFixed(2)}` : ""}
+💰 *Total Charges: $${grandTotal.toFixed(2)}*
+
+🧾 *Account Summary:*
+💳 Previous Balance: $${(sale.previousBalance ?? 0).toFixed(2)}
+💵 Credits: $${(sale.credits ?? 0).toFixed(2)}
+📌 Total Amount Due: $${((sale.previousBalance ?? 0) - (sale.credits ?? 0) + grandTotal).toFixed(2)}
+
 🏦 Bank: ${sale.bankName || "N/A"}
 🏛️ Routing #: ${sale.routing || "N/A"}
 🏦 Account #: ${sale.account || "N/A"}
-⚖️ Weight Out: ${sale.weightOut} lb
-🔢 Pieces: ${sale.pieces}
-💸 Proposed Sales Price: ${sale.price}
-💰 Sold: ${percentageSold}% of lot
 
 📈 *Stock Status:*
 Before: ${originalLot.currentStock} lb

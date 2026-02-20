@@ -18,4 +18,6 @@ export interface SaleWithProduct {
   bankName?: string;
   routing?: string;
   account?: string;
+  freightCharge?: number;
+  fuelSurcharge?: number;
 }

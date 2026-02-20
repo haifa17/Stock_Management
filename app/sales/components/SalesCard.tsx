@@ -38,9 +38,6 @@ export function SalesCard({ sale }: SalesCardProps) {
     // Balance section figures
     const previousBalance = sale.previousBalance ?? 0;
     const credits = sale.credits ?? 0;
-    const currentCharges = sale.price;
-    const totalDue = previousBalance - credits + currentCharges;
-
     // ── LOGO ─────────────────────────────────────────────────────────────────
     doc.setFillColor(30, 120, 60);
     doc.rect(20, 12, 25, 18, "F");
@@ -122,6 +119,33 @@ export function SalesCard({ sale }: SalesCardProps) {
     doc.text(`Client: ${sale.client}`, metaX, rightY, { align: "right" });
 
     // ── PRODUCT TABLE ─────────────────────────────────────────────────────────
+    const freight = sale.freightCharge ?? 0;
+    const fuel = sale.fuelSurcharge ?? 0;
+    const grandTotal = sale.price + freight + fuel;
+
+    const tableBody: string[][] = [
+      [
+        sale.product,
+        sale.weightOut.toString(),
+        sale.pieces.toString(),
+        (sale.price / sale.pieces).toFixed(2),
+        `$${sale.price.toFixed(2)}`,
+      ],
+    ];
+
+    if (freight > 0) {
+      tableBody.push([
+        "Freight / Delivery",
+        "—",
+        "—",
+        "—",
+        `$${freight.toFixed(2)}`,
+      ]);
+    }
+    if (fuel > 0) {
+      tableBody.push(["Fuel Surcharge", "—", "—", "—", `$${fuel.toFixed(2)}`]);
+    }
+
     autoTable(doc, {
       startY: 78,
       head: [
@@ -130,18 +154,10 @@ export function SalesCard({ sale }: SalesCardProps) {
           "Weight Out (lb)",
           "Pieces",
           "Unit Price ($)",
-          "Proposed Price ($)",
+          "Amount ($)",
         ],
       ],
-      body: [
-        [
-          sale.product,
-          sale.weightOut.toString(),
-          sale.pieces.toString(),
-          (sale.price / sale.pieces).toFixed(2),
-          sale.price.toFixed(2),
-        ],
-      ],
+      body: tableBody,
       theme: "grid",
       headStyles: {
         fillColor: [30, 120, 60],
@@ -149,6 +165,13 @@ export function SalesCard({ sale }: SalesCardProps) {
         fontStyle: "bold",
       },
       styles: { fontSize: 10 },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.row.index > 0) {
+          data.cell.styles.fillColor = [245, 245, 245];
+          data.cell.styles.textColor = [80, 80, 80];
+          data.cell.styles.fontStyle = "italic";
+        }
+      },
     });
 
     const afterTableY: number = (doc as any).lastAutoTable?.finalY ?? 78;
@@ -162,10 +185,10 @@ export function SalesCard({ sale }: SalesCardProps) {
     doc.setFont("helvetica", "bold");
     doc.text("Account Summary", 20, summaryStartY);
 
-    const summaryRows: [string, number, boolean?][] = [
+    const summaryRows: [string, number][] = [
       ["Previous Balance:", previousBalance],
       ["Payments / Credits:", credits],
-      ["Current Charges:", currentCharges],
+      ["Current Charges:", grandTotal], // ← now includes freight + fuel
     ];
 
     let sumY = summaryStartY + 7;
@@ -174,7 +197,6 @@ export function SalesCard({ sale }: SalesCardProps) {
     summaryRows.forEach(([label, amount]) => {
       doc.setFont("helvetica", "normal");
       doc.text(label, colLabel, sumY, { align: "left" });
-      // Credits shown in green to indicate a deduction
       if (label.startsWith("Payments")) {
         doc.setTextColor(30, 120, 60);
         doc.text(`- $${amount.toFixed(2)}`, colValue, sumY, { align: "right" });
@@ -189,7 +211,9 @@ export function SalesCard({ sale }: SalesCardProps) {
     doc.setDrawColor(180);
     doc.line(colLabel, sumY - 2, pageWidth - 20, sumY - 2);
 
-    // Total Amount Due — bold + large
+    // Total Amount Due — uses grandTotal
+    const totalDue = previousBalance - credits + grandTotal;
+
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.text("Total Amount Due:", colLabel, sumY + 6, { align: "left" });
@@ -338,6 +362,32 @@ export function SalesCard({ sale }: SalesCardProps) {
               <p className="font-semibold text-foreground">
                 {sale.paymentTerms}
               </p>
+            </div>
+          )}
+          {/* Surcharges */}
+          {((sale.freightCharge != null && sale.freightCharge > 0) ||
+            (sale.fuelSurcharge != null && sale.fuelSurcharge > 0)) && (
+            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+              {sale.freightCharge != null && sale.freightCharge > 0 && (
+                <div>
+                  <p className="text-muted-foreground font-medium">
+                    Freight / Delivery
+                  </p>
+                  <p className="font-semibold text-foreground">
+                    ${sale.freightCharge.toFixed(2)}
+                  </p>
+                </div>
+              )}
+              {sale.fuelSurcharge != null && sale.fuelSurcharge > 0 && (
+                <div>
+                  <p className="text-muted-foreground font-medium">
+                    Fuel Surcharge
+                  </p>
+                  <p className="font-semibold text-foreground">
+                    ${sale.fuelSurcharge.toFixed(2)}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
