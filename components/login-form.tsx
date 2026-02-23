@@ -29,10 +29,10 @@ export default function LoginForm() {
           }
           router.refresh();
         } else {
-          setError(data.error || "Échec de la connexion");
+          setError(data.error || "Connection failed");
         }
       } catch (err: any) {
-        setError(err.response?.data?.error || "Erreur de connexion au serveur");
+        setError(err.response?.data?.error || "Server connection error");
       }
     });
   };

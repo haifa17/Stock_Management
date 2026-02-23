@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     // Validation des champs
     if (!email || !password) {
       return NextResponse.json(
-        { success: false, error: "Email et mot de passe requis" },
+        { success: false, error: "Email and password are required" },
         { status: 400 },
       );
     }
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: "Email ou mot de passe incorrect" },
+        { success: false, error: "Incorrect email or password" },
         { status: 401 },
       );
     }
@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("Erreur lors de la connexion:", error);
+    console.error("Connection failed:", error);
     return NextResponse.json(
-      { success: false, error: "Erreur serveur" },
+      { success: false, error: "Server error" },
       { status: 500 },
     );
   }
