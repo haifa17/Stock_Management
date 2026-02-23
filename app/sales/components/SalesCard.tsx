@@ -39,18 +39,13 @@ export function SalesCard({ sale }: SalesCardProps) {
     const previousBalance = sale.previousBalance ?? 0;
     const credits = sale.credits ?? 0;
     // ── LOGO ─────────────────────────────────────────────────────────────────
-    doc.setFillColor(30, 120, 60);
-    doc.rect(20, 12, 25, 18, "F");
-    doc.setTextColor(255);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("HF", 32.5, 23, { align: "center" });
+    doc.addImage("/logo.png", "PNG", 20, 12, 25, 18);
     doc.setTextColor(0);
 
     // ── COMPANY NAME + SUBTITLE ───────────────────────────────────────────────
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("HALAL FARMS", 50, 22);
+    doc.text("Farm 2 Markets", 50, 22);
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
@@ -257,7 +252,7 @@ export function SalesCard({ sale }: SalesCardProps) {
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
-    doc.text("HALAL FARMS", 20, footerTop + 13);
+    doc.text("Farm 2 Markets", 20, footerTop + 13);
     doc.text("[Street Address], [City, State ZIP]", 20, footerTop + 19);
 
     // ACH / Wire block
