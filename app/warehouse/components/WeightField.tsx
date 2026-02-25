@@ -8,6 +8,8 @@ interface WeightFieldProps {
   autoFilled: boolean;
   onChange: (value: string) => void;
   disabled?: boolean;
+  label?: string;
+  max?: number;
 }
 
 export function WeightField({
@@ -15,11 +17,15 @@ export function WeightField({
   autoFilled,
   onChange,
   disabled,
+  label = "Qty Received (lb)",
+  max,
 }: WeightFieldProps) {
+  const inputId = label.toLowerCase().replace(/\s+/g, "-");
+
   return (
     <div className="space-y-2">
-      <Label htmlFor="qtyReceived" className="flex items-center gap-2">
-        Qty Received (lb)
+      <Label htmlFor={inputId} className="flex items-center gap-2">
+        {label}
         {autoFilled && (
           <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full animate-pulse">
             ⚖️ Auto-filled from scanner
@@ -27,10 +33,11 @@ export function WeightField({
         )}
       </Label>
       <Input
-        id="qtyReceived"
+        id={inputId}
         type="number"
         step="0.01"
         min="0"
+        max={max}
         placeholder="0"
         value={value}
         onChange={(e) => onChange(e.target.value)}
