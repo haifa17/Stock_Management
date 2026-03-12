@@ -4,7 +4,7 @@ import { SignJWT } from "jose";
 
 // Clé secrète pour signer les tokens JWT
 const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key-change-in-production",
+  process.env.JWT_SECRET ,
 );
 
 // POST - Connexion
