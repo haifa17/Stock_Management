@@ -81,7 +81,7 @@ function drawHeader(doc: jsPDF, sale: SaleData, invoiceNumber: string) {
   // Company name + subtitle
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
-  doc.text("Farm 2 Markets", 50, 22);
+  doc.text("NYS Farms", 50, 22);
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
@@ -257,7 +257,7 @@ function drawFooter(doc: jsPDF, sale: SaleData) {
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.text("Farm 2 Markets", 20, footerTop + 13);
+  doc.text("NYS Farms", 20, footerTop + 13);
   doc.text("[Street Address], [City, State ZIP]", 20, footerTop + 19);
 
   // ACH / Wire block

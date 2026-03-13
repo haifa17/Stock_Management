@@ -22,9 +22,10 @@ export default async function LoginPage() {
     <main className="min-h-screen bg-muted flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="flex justify-center items-center ">
+          <CardTitle className="flex justify-center items-center font-bold text-2xl">
             {" "}
-            <img src="/logo.png" className="" />
+            {/* <img src="/logo.png" className="" /> */}
+            NYS Farms
           </CardTitle>
           <CardDescription>Meat Inventory Management</CardDescription>
         </CardHeader>
