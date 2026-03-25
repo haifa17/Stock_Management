@@ -28,7 +28,7 @@ const LogoutButton = () => {
   return (
     <Button
       size="sm"
-      className="cursor-pointer "
+      className="cursor-pointer bg-green-900"
       onClick={handleLogout}
       disabled={isLoading}
     >

@@ -73,7 +73,7 @@ export default function LoginForm() {
         />
       </div>
 
-      <Button type="submit" className="w-full cursor-pointer" disabled={isPending}>
+      <Button type="submit" className="w-full cursor-pointer bg-green-900" disabled={isPending}>
         {isPending ? "Signing in..." : "Sign In"}
       </Button>
     </form>

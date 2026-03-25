@@ -24,8 +24,7 @@ export default async function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="flex justify-center items-center font-bold text-2xl">
             {" "}
-            {/* <img src="/logo.png" className="" /> */}
-            NYS Farms
+            <img src="/logo.png" className="" />
           </CardTitle>
           <CardDescription>Meat Inventory Management</CardDescription>
         </CardHeader>
